@@ -35,7 +35,7 @@ game_debug  = [[".", ".", "o", "o", "o", ".", "."],
                [".", ".", "o", "o", "o", ".", "."]]
 
 
-board_original = game_debug
+board_original = game2
 board = deepcopy(board_original)
 
 W = len(board)
@@ -77,8 +77,8 @@ won_text = font.render('WON!', True, win_color)
 
 font_size = POTATO_SIZE//2
 font = pygame.font.Font(None, font_size)
-restart_text_win = font.render('<press anywhere to restart>', True, win_color)
-restart_text_lose = font.render('<press anywhere to restart>', True, lose_color)
+restart_text_win = font.render('<tap anywhere to restart>', True, win_color)
+restart_text_lose = font.render('<tap anywhere to restart>', True, lose_color)
 
 
 def between(pos1, pos2):
@@ -129,10 +129,6 @@ def check_win(board):
         return True
     return False
 
-def reset_board():
-    global board
-    board = deepcopy(board_original)
-
 
 selected = None
 can_jump_to = []     
@@ -173,6 +169,31 @@ def click(pos):
     return False
 
 
+def reset_board():
+    global board
+    board = deepcopy(board_original)
+
+### android stuff
+def save(fname='.board_state'):
+    try:
+        with open(fname, 'w') as f:
+            for b in board:
+                f.write(','.join(b)+'\n')
+    except:
+        pass
+
+def load(fname='.board_state'):
+    global board
+    new_board = []
+    try:
+        with open(fname, 'r') as f:
+            for line in f.readlines():
+                new_board.append(line.strip().split(','))
+        board = new_board
+    except:
+        pass
+### end android stuff
+    
 def main():
     won = False
     finished = False
@@ -180,7 +201,7 @@ def main():
     while running:
         for event in pygame.event.get():
             if event.type == KEYDOWN:
-                if event.key == K_ESCAPE:
+                if event.key == K_ESCAPE or event.key == K_AC_BACK:
                     running = False
             elif event.type == QUIT:
                 running = False
@@ -197,6 +218,13 @@ def main():
                         lose.play()
                         won = False
                     finished = True
+
+            elif event.type == APP_WILLENTERBACKGROUND:
+                save()
+
+            elif event.type == APP_DIDENTERFOREGROUND:
+                load()
+
 
 
         for i, row in enumerate(board):
