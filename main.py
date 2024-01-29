@@ -46,7 +46,7 @@ SCREEN_HEIGHT = POTATO_SIZE*H
 
 
 pygame.init()
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), SCALED|FULLSCREEN)
 pygame.display.set_caption('Kartoffelspiel')
 
 
@@ -272,8 +272,7 @@ def main():
                 tut_timer_start = t
 
             if tutorial_state == 2:
-                print(t)
-                if t - tut_timer_start > 4000:
+                if t - tut_timer_start > 3500:
                     tutorial_state = 3
                     
             tutorial_state_prev = tutorial_state
