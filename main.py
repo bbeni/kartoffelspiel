@@ -80,6 +80,14 @@ font = pygame.font.Font(None, font_size)
 restart_text_win = font.render('<tap anywhere to restart>', True, win_color)
 restart_text_lose = font.render('<tap anywhere to restart>', True, lose_color)
 
+tut_color = (24,2,253)
+font_size = int(POTATO_SIZE/2)
+font = pygame.font.Font(None, font_size)
+tutorial_text1 = font.render('select a POTATO by tapping!', True, tut_color)
+tutorial_text2 = font.render('eat the ONE in between!', True, tut_color)
+tutorial_text3 = font.render('there can be only ONE POTATO!', True, tut_color)
+tutorial_texts = [tutorial_text1, tutorial_text2, tutorial_text3]
+
 
 def between(pos1, pos2):
     a = int((pos1[0] + pos2[0]) / 2)
@@ -131,10 +139,13 @@ def check_win(board):
 
 
 selected = None
-can_jump_to = []     
+can_jump_to = []
+
+tutorial_state_prev = -1
+tutorial_state = 0
 
 def click(pos):
-    global can_jump_to, board, selected
+    global can_jump_to, board, selected, tutorial_state
     x, y = pos
     i, j = int(math.floor(x / POTATO_SIZE)), int(math.floor(y / POTATO_SIZE))
 
@@ -152,6 +163,9 @@ def click(pos):
             return True
         hmpf.play()
 
+        if tutorial_state < 2:
+            tutorial_state = 2
+
 
     elif board[i][j] == "x":
         selected = (i, j)
@@ -161,6 +175,8 @@ def click(pos):
                        and board[i][j] == "o"]
         can_jump_to = [(a, b) for a, b in can_jump_to
                        if character(between((a, b), selected)) == "x"]
+        if tutorial_state == 0 and len(can_jump_to) > 0:
+            tutorial_state = 1
 
     else:
         selected = None
@@ -195,6 +211,7 @@ def load(fname='.board_state'):
 ### end android stuff
     
 def main():
+    global tutorial_state, tutorial_state_prev
     won = False
     finished = False
     running = True
@@ -241,6 +258,26 @@ def main():
                         screen.blit(kartoffel_stoned_image, (x, y))
                     else:
                         screen.blit(kartoffel_image, (x, y))
+
+        if tutorial_state < 3:
+            tut = tutorial_texts[tutorial_state]
+            mid_x, mid_y = SCREEN_WIDTH//2, SCREEN_HEIGHT//2
+            mid_text_x, mid_text_y = tut.get_width()//2, tut.get_height()//2 
+            screen.blit(tut, (mid_x - mid_text_x, mid_y - POTATO_SIZE//2 - mid_text_y))
+
+
+            t = pygame.time.get_ticks()
+            
+            if tutorial_state_prev != tutorial_state:
+                tut_timer_start = t
+
+            if tutorial_state == 2:
+                print(t)
+                if t - tut_timer_start > 4000:
+                    tutorial_state = 3
+                    
+            tutorial_state_prev = tutorial_state
+
 
 
         if finished:
