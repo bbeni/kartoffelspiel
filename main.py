@@ -6,15 +6,50 @@ from copy import deepcopy
 
 POTATO_SIZE = 115 # in pixels
 
-game1  = [[".", ".", "x", "x", "x", ".", "."],
-          [".", "x", "x", "x", "x", "x", "."],
-          ["x", "x", "x", "x", "x", "x", "x"],
-          ["x", "x", "x", "o", "x", "x", "x"],
-          ["x", "x", "x", "x", "x", "x", "x"],
-          [".", "x", "x", "x", "x", "x", "."],
-          [".", ".", "x", "x", "x", ".", "."]]
 
-game2  = [[".", ".", "x", "x", "x", ".", "."],
+game0  = [[".", ".", "o", "o", "o", ".", "."],
+          [".", ".", "o", "o", "o", ".", "."],
+          ["o", "o", "o", "o", "o", "o", "o"],
+          ["o", "o", "o", "o", "o", "o", "o"],
+          ["o", "o", "o", "o", "o", "o", "o"],
+          [".", ".", "o", "o", "o", ".", "."],
+          [".", ".", "o", "o", "o", ".", "."]]
+
+
+game1  = [[".", ".", "o", "x", "o", ".", "."],
+          [".", ".", "o", "x", "o", ".", "."],
+          ["o", "o", "o", "o", "o", "o", "o"],
+          ["o", "o", "o", "o", "o", "o", "o"],
+          ["o", "o", "o", "x", "o", "o", "o"],
+          [".", ".", "o", "x", "o", ".", "."],
+          [".", ".", "o", "o", "o", ".", "."]]
+
+game2  = [[".", ".", "o", "x", "o", ".", "."],
+          [".", ".", "o", "x", "o", ".", "."],
+          ["o", "o", "o", "o", "o", "o", "o"],
+          ["o", "o", "o", "o", "o", "o", "o"],
+          ["o", "o", "o", "x", "x", "o", "o"],
+          [".", ".", "o", "x", "o", ".", "."],
+          [".", ".", "o", "o", "o", ".", "."]]
+
+game3  = [[".", ".", "o", "x", "o", ".", "."],
+          [".", ".", "o", "x", "o", ".", "."],
+          ["o", "o", "o", "o", "o", "o", "o"],
+          ["o", "o", "o", "o", "o", "o", "o"],
+          ["o", "o", "o", "x", "x", "o", "o"],
+          [".", ".", "x", "x", "o", ".", "."],
+          [".", ".", "o", "o", "o", ".", "."]]
+
+
+game4  = [[".", ".", "o", "o", "x", ".", "."],
+          [".", ".", "o", "x", "x", ".", "."],
+          ["o", "o", "o", "x", "o", "x", "o"],
+          ["x", "x", "x", "o", "x", "o", "o"],
+          ["o", "o", "o", "x", "o", "o", "o"],
+          [".", ".", "o", "o", "o", ".", "."],
+          [".", ".", "o", "o", "o", ".", "."]]
+
+game5  = [[".", ".", "x", "x", "x", ".", "."],
           [".", ".", "x", "x", "x", ".", "."],
           ["x", "x", "x", "x", "x", "x", "x"],
           ["x", "x", "x", "o", "x", "x", "x"],
@@ -22,21 +57,18 @@ game2  = [[".", ".", "x", "x", "x", ".", "."],
           [".", ".", "x", "x", "x", ".", "."],
           [".", ".", "x", "x", "x", ".", "."]]
 
-game3 = [["x", "x", "o", "o"],
-         ["x", "x", "o", "o"],
-         ["x", "x", "o", "o"]]
-
-game_debug  = [[".", ".", "o", "o", "o", ".", "."],
-               [".", ".", "o", "o", "o", ".", "."],
-               ["o", "o", "o", "o", "o", "o", "o"],
-               ["o", "o", "o", "o", "o", "x", "o"],
-               ["o", "o", "o", "o", "x", "o", "o"],
-               [".", ".", "o", "o", "x", ".", "."],
-               [".", ".", "o", "o", "o", ".", "."]]
+game6  = [[".", ".", "x", "x", "x", ".", "."],
+          [".", "x", "x", "x", "x", "x", "."],
+          ["x", "x", "x", "x", "x", "x", "x"],
+          ["x", "x", "x", "o", "x", "x", "x"],
+          ["x", "x", "x", "x", "x", "x", "x"],
+          [".", "x", "x", "x", "x", "x", "."],
+          [".", ".", "x", "x", "x", ".", "."]]
 
 
-board_original = game2
-board = deepcopy(board_original)
+games = [game1, game2, game3, game4, game5, game6]
+board = deepcopy(games[0])
+game_nr = 0
 
 W = len(board)
 H = len(board[0])
@@ -77,7 +109,7 @@ won_text = font.render('WON!', True, win_color)
 
 font_size = POTATO_SIZE//2
 font = pygame.font.Font(None, font_size)
-restart_text_win = font.render('<tap anywhere to restart>', True, win_color)
+restart_text_win = font.render('<tap anywhere to go next>', True, win_color)
 restart_text_lose = font.render('<tap anywhere to restart>', True, lose_color)
 
 tut_color = (24,2,253)
@@ -190,9 +222,9 @@ def click(pos):
     return False
 
 
-def reset_board():
+def reset_board(game_nr):
     global board
-    board = deepcopy(board_original)
+    board = deepcopy(games[game_nr])
 
 ### android stuff
 def save(fname='.board_state'):
@@ -216,7 +248,7 @@ def load(fname='.board_state'):
 ### end android stuff
     
 def main():
-    global tutorial_state, tutorial_state_prev
+    global tutorial_state, tutorial_state_prev, game_nr
     won = False
     finished = False
     running = True
@@ -229,13 +261,14 @@ def main():
                 running = False
             elif event.type == MOUSEBUTTONDOWN:
                 if finished:
-                    reset_board()
+                    reset_board(game_nr)
                     finished = False
                 is_over = click(event.pos)
                 if is_over:
                     if check_win(board):
                         win.play()
                         won = True
+                        game_nr += 1
                     else:
                         lose.play()
                         won = False
