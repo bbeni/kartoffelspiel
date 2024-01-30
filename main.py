@@ -1,10 +1,10 @@
-__version__ = "0.0.1"
+__version__ = "0.2"
 import pygame
 from pygame.locals import *
 import math
 from copy import deepcopy
 
-POTATO_SIZE = 115 # in pixels
+POTATO_SIZE = 125 # in pixels
 
 
 game0  = [[".", ".", "o", "o", "o", ".", "."],
@@ -59,8 +59,8 @@ game5  = [[".", ".", "x", "x", "x", ".", "."],
 
 game6  = [[".", ".", "x", "x", "x", ".", "."],
           [".", "x", "x", "x", "x", "x", "."],
-          ["x", "x", "x", "x", "x", "x", "x"],
           ["x", "x", "x", "o", "x", "x", "x"],
+          ["x", "x", "x", "x", "x", "x", "x"],
           ["x", "x", "x", "x", "x", "x", "x"],
           [".", "x", "x", "x", "x", "x", "."],
           [".", ".", "x", "x", "x", ".", "."]]
@@ -77,26 +77,30 @@ SCREEN_WIDTH = POTATO_SIZE*W
 SCREEN_HEIGHT = POTATO_SIZE*H
 
 
+
+
 pygame.init()
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), SCALED|FULLSCREEN)
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), FULLSCREEN)
 pygame.display.set_caption('Kartoffelspiel')
 
 
-kartoffel_image = pygame.image.load('kartoffel.png').convert_alpha()
+art_folder = './artwork/'
+
+kartoffel_image = pygame.image.load(art_folder + 'kartoffel.png').convert_alpha()
 kartoffel_image = pygame.transform.scale(kartoffel_image, (POTATO_SIZE, POTATO_SIZE))
-kartoffel_stoned_image = pygame.image.load('kartoffel_stoned.png').convert_alpha()
+kartoffel_stoned_image = pygame.image.load(art_folder + 'kartoffel_stoned.png').convert_alpha()
 kartoffel_stoned_image = pygame.transform.scale(kartoffel_stoned_image, (POTATO_SIZE, POTATO_SIZE))
 
-hole_image = pygame.image.load('hole.jpg').convert()
+hole_image = pygame.image.load(art_folder + 'hole.jpg').convert()
 hole_image = pygame.transform.scale(hole_image, (POTATO_SIZE, POTATO_SIZE))
-active_hole_image = pygame.image.load('active_hole.jpg').convert()
+active_hole_image = pygame.image.load(art_folder + 'active_hole.jpg').convert()
 active_hole_image = pygame.transform.scale(active_hole_image, (POTATO_SIZE, POTATO_SIZE))
 
 
 pygame.mixer.init()
-hmpf = pygame.mixer.Sound("hmpf.wav")
-win = pygame.mixer.Sound("win.wav")
-lose = pygame.mixer.Sound("lose.wav")
+hmpf = pygame.mixer.Sound(art_folder + "hmpf.wav")
+win = pygame.mixer.Sound(art_folder + "win.wav")
+lose = pygame.mixer.Sound(art_folder + "lose.wav")
 
 
 win_color = (0,255,0)
@@ -273,12 +277,6 @@ def main():
                         lose.play()
                         won = False
                     finished = True
-
-            elif event.type == APP_WILLENTERBACKGROUND:
-                save()
-
-            elif event.type == APP_DIDENTERFOREGROUND:
-                load()
 
 
 
