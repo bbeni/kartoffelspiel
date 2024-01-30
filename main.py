@@ -149,6 +149,11 @@ def click(pos):
     x, y = pos
     i, j = int(math.floor(x / POTATO_SIZE)), int(math.floor(y / POTATO_SIZE))
 
+    def is_char(i, j, c):
+        if 0 <= i < len(board) and 0 <= j < len(board[0]):
+            return board[i][j] == c
+        return False
+
     if selected and (i, j) in can_jump_to:
         i_selected, j_selected = selected
         board[i][j] = "x"
@@ -167,7 +172,7 @@ def click(pos):
             tutorial_state = 2
 
 
-    elif board[i][j] == "x":
+    elif is_char(i, j, 'x'):
         selected = (i, j)
         can_jump_to = [(i - 2, j), (i + 2, j), (i, j - 2), (i, j + 2)]
         can_jump_to = [(i, j) for i, j in can_jump_to
