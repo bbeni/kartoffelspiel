@@ -1,4 +1,4 @@
-__version__ = "0.2"
+__version__ = "0.3"
 import pygame
 from pygame.locals import *
 import math
@@ -13,6 +13,7 @@ games = []
 # r is restart_btn
 # s is save_btn
 # l is load_btn
+# b is board number display
 
 '''
 gamee  = [[".", "r", "o", "o", "o", "l", "s"],
@@ -25,28 +26,28 @@ gamee  = [[".", "r", "o", "o", "o", "l", "s"],
 '''
 
 games.append([["s", ".", "o", "x", "o", ".", "."],
-              ["l", ".", "o", "x", "o", ".", "."],
+              ["l", "o", "o", "x", "o", "o", "."],
               ["o", "o", "o", "o", "o", "o", "o"],
               ["o", "o", "o", "o", "o", "o", "o"],
               ["o", "o", "o", "x", "o", "o", "o"],
-              ["r", ".", "o", "x", "o", ".", "."],
-              [".", ".", "o", "o", "o", ".", "."]])
+              ["r", "o", "o", "x", "o", "o", "."],
+              ["b", ".", "o", "o", "o", ".", "."]])
 
 games.append([["s", ".", "o", "x", "o", ".", "."],
-              ["l", ".", "o", "x", "o", ".", "."],
+              ["l", "o", "o", "x", "o", "o", "."],
               ["o", "o", "o", "o", "o", "o", "o"],
               ["o", "o", "o", "o", "o", "o", "o"],
               ["o", "o", "o", "x", "x", "o", "o"],
-              ["r", ".", "o", "x", "o", ".", "."],
-              [".", ".", "o", "o", "o", ".", "."]])
+              ["r", "o", "o", "x", "o", "o", "."],
+              ["b", ".", "o", "o", "o", ".", "."]])
 
 games.append([["s", ".", "o", "x", "o", ".", "."],
-              ["l", ".", "o", "x", "o", ".", "."],
+              ["l", "o", "o", "x", "o", "o", "."],
               ["o", "o", "o", "o", "o", "o", "o"],
               ["o", "o", "o", "o", "o", "o", "o"],
               ["o", "o", "o", "x", "x", "o", "o"],
-              ["r", ".", "x", "x", "o", ".", "."],
-              [".", ".", "o", "o", "o", ".", "."]])
+              ["r", "o", "x", "x", "o", "o", "."],
+              ["b", ".", "o", "o", "o", ".", "."]])
 
 games.append([["s", ".", "o", "o", "o", ".", "."],
               ["l", "o", "o", "x", "o", "o", "."],
@@ -54,7 +55,7 @@ games.append([["s", ".", "o", "o", "o", ".", "."],
               ["o", "x", "x", "x", "x", "x", "o"],
               ["o", "o", "o", "x", "o", "o", "o"],
               ["r", "o", "o", "x", "o", "o", "."],
-              [".", ".", "o", "o", "o", ".", "."]])
+              ["b", ".", "o", "o", "o", ".", "."]])
 
 games.append([["s", ".", "o", "o", "o", ".", "."],
               ["l", "o", "x", "o", "o", "o", "."],
@@ -62,15 +63,23 @@ games.append([["s", ".", "o", "o", "o", ".", "."],
               ["o", "o", "x", "x", "x", "o", "o"],
               ["o", "o", "x", "x", "o", "o", "o"],
               ["r", "o", "x", "o", "o", "o", "."],
-              [".", ".", "o", "o", "o", ".", "."]])
+              ["b", ".", "o", "o", "o", ".", "."]])
 
 games.append([["s", ".", "o", "o", "x", ".", "."],
-              ["l", ".", "o", "x", "x", ".", "."],
+              ["l", "o", "o", "x", "x", "o", "."],
               ["o", "o", "o", "x", "o", "x", "o"],
               ["x", "x", "x", "o", "x", "o", "o"],
               ["o", "o", "o", "x", "o", "o", "o"],
-              ["r", ".", "o", "o", "o", ".", "."],
-              [".", ".", "o", "o", "o", ".", "."]])
+              ["r", "o", "o", "o", "o", "o", "."],
+              ["b", ".", "o", "o", "o", ".", "."]])
+
+games.append([["s", ".", "x", "x", "x", ".", "."],
+              ["l", "o", "x", "x", "x", "o", "."],
+              ["x", "x", "x", "x", "x", "x", "x"],
+              ["x", "x", "x", "o", "x", "x", "x"],
+              ["x", "x", "x", "x", "x", "x", "x"],
+              ["r", "o", "x", "x", "x", "o", "."],
+              ["b", ".", "x", "x", "x", ".", "."]])
 
 games.append([["s", ".", "x", "x", "x", ".", "."],
               ["l", ".", "x", "x", "x", ".", "."],
@@ -78,7 +87,7 @@ games.append([["s", ".", "x", "x", "x", ".", "."],
               ["x", "x", "x", "o", "x", "x", "x"],
               ["x", "x", "x", "x", "x", "x", "x"],
               ["r", ".", "x", "x", "x", ".", "."],
-              [".", ".", "x", "x", "x", ".", "."]])
+              ["b", ".", "x", "x", "x", ".", "."]])
 
 games.append([["s", ".", "x", "x", "x", ".", "."],
               ["l", "x", "x", "x", "x", "x", "."],
@@ -86,7 +95,7 @@ games.append([["s", ".", "x", "x", "x", ".", "."],
               ["x", "x", "x", "x", "x", "x", "x"],
               ["x", "x", "x", "x", "x", "x", "x"],
               ["r", "x", "x", "x", "x", "x", "."],
-              [".", ".", "x", "x", "x", ".", "."]])
+              ["b", ".", "x", "x", "x", ".", "."]])
 
 
 game_nr = 0
@@ -116,6 +125,13 @@ pygame.display.set_caption('Kartoffelspiel')
 
 art_folder = os.path.abspath('.') + '/artwork/'
 
+# sound 
+pygame.mixer.init()
+hmpf = pygame.mixer.Sound(art_folder + "hmpf.wav")
+win = pygame.mixer.Sound(art_folder + "win.wav")
+lose = pygame.mixer.Sound(art_folder + "lose.wav")
+
+# images
 kartoffel_image = pygame.image.load(art_folder + 'kartoffel.png').convert_alpha()
 kartoffel_image = pygame.transform.scale(kartoffel_image, (POTATO_SIZE, POTATO_SIZE))
 kartoffel_stoned_image = pygame.image.load(art_folder + 'kartoffel_stoned.png').convert_alpha()
@@ -126,17 +142,10 @@ hole_image = pygame.transform.scale(hole_image, (POTATO_SIZE, POTATO_SIZE))
 active_hole_image = pygame.image.load(art_folder + 'active_hole.jpg').convert()
 active_hole_image = pygame.transform.scale(active_hole_image, (POTATO_SIZE, POTATO_SIZE))
 
-
-pygame.mixer.init()
-hmpf = pygame.mixer.Sound(art_folder + "hmpf.wav")
-win = pygame.mixer.Sound(art_folder + "win.wav")
-lose = pygame.mixer.Sound(art_folder + "lose.wav")
-
-
 win_color = (0,255,0)
 lose_color = (255,0,0)
 
-font_size = POTATO_SIZE*2
+font_size = POTATO_SIZE*3
 font = pygame.font.Font(None, font_size)
 lost_text = font.render('LOST!', True, lose_color)
 won_text = font.render('WON!', True, win_color)
@@ -146,14 +155,13 @@ font = pygame.font.Font(None, font_size)
 restart_text_win = font.render('<tap anywhere to go next>', True, win_color)
 restart_text_lose = font.render('<tap anywhere to restart>', True, lose_color)
 
-tut_color = (24,2,253)
-font_size = int(POTATO_SIZE/4*3)
+tut_color = (24,244,253)
+font_size = int(POTATO_SIZE/5*4)
 font = pygame.font.Font(None, font_size)
-tutorial_text1 = font.render('select a POTATO by tapping!', True, tut_color)
+tutorial_text1 = font.render('tap POTATO!', True, tut_color)
 tutorial_text2 = font.render('eat the ONE in between!', True, tut_color)
-tutorial_text3 = font.render('there can be only ONE POTATO!', True, tut_color)
+tutorial_text3 = font.render('remove ALL but ONE!', True, tut_color)
 tutorial_texts = [tutorial_text1, tutorial_text2, tutorial_text3]
-
 
 # buttons
 btn_load_image = pygame.image.load(art_folder + 'load_saved_btn.png').convert()
@@ -162,6 +170,19 @@ btn_restart_image = pygame.image.load(art_folder + 'restart_btn.png').convert()
 btn_load_image = pygame.transform.scale(btn_load_image, (POTATO_SIZE, POTATO_SIZE))
 btn_save_image = pygame.transform.scale(btn_save_image, (POTATO_SIZE, POTATO_SIZE))
 btn_restart_image = pygame.transform.scale(btn_restart_image, (POTATO_SIZE, POTATO_SIZE))
+
+# board number display
+board_nr_renders = []
+font = pygame.font.Font(None, POTATO_SIZE)
+glow_image = pygame.image.load(art_folder + 'glow.png').convert()
+glow_image = pygame.transform.scale(glow_image, (POTATO_SIZE, POTATO_SIZE))
+
+for i in range(len(games)):
+    nr_render = font.render(f'{i+1}', True, (0, 0, 0))
+    rect = nr_render.get_rect(center=(POTATO_SIZE//2, POTATO_SIZE//2))
+    base = glow_image.copy()
+    base.blit(nr_render, rect)
+    board_nr_renders.append(base)
 
 
 def between(pos1, pos2):
@@ -283,10 +304,13 @@ def reset_board(game_nr):
     board = deepcopy(games[game_nr])
 
 def save(fname='.board_state'):
-    with open(fname, 'w') as f:
-        f.write(f'{game_nr}\n')
-        for b in board:
-            f.write(','.join(b)+'\n')
+    try:
+        with open(fname, 'w') as f:
+            f.write(f'{game_nr}\n')
+            for b in board:
+                f.write(','.join(b)+'\n')
+    except:
+        pass
   
 def load(fname='.board_state'):
     global board, game_nr
@@ -350,7 +374,9 @@ def main():
                 elif c == 'l':
                     screen.blit(btn_load_image, (x, y))   
                 elif c == 's':
-                    screen.blit(btn_save_image, (x, y))   
+                    screen.blit(btn_save_image, (x, y))
+                elif c == 'b':
+                    screen.blit(board_nr_renders[game_nr], (x, y))
 
         if tutorial_state < 3:
             tut = tutorial_texts[tutorial_state]
@@ -371,9 +397,8 @@ def main():
             tutorial_state_prev = tutorial_state
 
 
-
         if finished:
-            mid_x, mid_y = SCREEN_WIDTH//2, SCREEN_HEIGHT//2 + TOP_OFFSET//2
+            mid_x, mid_y = SCREEN_WIDTH//2, SCREEN_HEIGHT//2 + TOP_OFFSET
             mid_restart_x, mid_restart_y = restart_text_win.get_width()//2, won_text.get_height()//2 
                 
             if won:
