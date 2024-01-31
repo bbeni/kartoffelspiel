@@ -5,6 +5,16 @@ import math
 from copy import deepcopy
 import os
 
+DRAW_EVERY_NTH_FRAME = 4 # Affects time eye closed
+EYE_OPEN_RATIO = 99/100  # ratio of (time eyes open) / time
+
+# colors in RGB
+tut_color        = (4  , 204, 253)
+win_color        = (0  , 255, 0  )
+lose_color       = (255, 0  , 0  )
+background_color = (45 ,  30, 15 )
+board_nr_color   = (15 ,  0 , 15 )
+
 
 games = []
 # o is empty
@@ -136,31 +146,30 @@ kartoffel_image = pygame.image.load(art_folder + 'kartoffel.png').convert_alpha(
 kartoffel_image = pygame.transform.scale(kartoffel_image, (POTATO_SIZE, POTATO_SIZE))
 kartoffel_stoned_image = pygame.image.load(art_folder + 'kartoffel_stoned.png').convert_alpha()
 kartoffel_stoned_image = pygame.transform.scale(kartoffel_stoned_image, (POTATO_SIZE, POTATO_SIZE))
+kartoffel_winky_image = pygame.image.load(art_folder + 'kartoffel_winky.png').convert_alpha()
+kartoffel_winky_image = pygame.transform.scale(kartoffel_winky_image, (POTATO_SIZE, POTATO_SIZE))
 
 hole_image = pygame.image.load(art_folder + 'hole.jpg').convert()
 hole_image = pygame.transform.scale(hole_image, (POTATO_SIZE, POTATO_SIZE))
 active_hole_image = pygame.image.load(art_folder + 'active_hole.jpg').convert()
 active_hole_image = pygame.transform.scale(active_hole_image, (POTATO_SIZE, POTATO_SIZE))
 
-win_color = (0,255,0)
-lose_color = (255,0,0)
 
 font_size = POTATO_SIZE*3
 font = pygame.font.Font(None, font_size)
 lost_text = font.render('LOST!', True, lose_color)
 won_text = font.render('WON!', True, win_color)
 
-font_size = POTATO_SIZE//2
+font_size = POTATO_SIZE
 font = pygame.font.Font(None, font_size)
-restart_text_win = font.render('<tap anywhere to go next>', True, win_color)
-restart_text_lose = font.render('<tap anywhere to restart>', True, lose_color)
+restart_text_win = font.render('<tap to go next>', True, win_color)
+restart_text_lose = font.render('<tap to restart>', True, lose_color)
 
-tut_color = (24,244,253)
 font_size = int(POTATO_SIZE/5*4)
 font = pygame.font.Font(None, font_size)
-tutorial_text1 = font.render('tap POTATO!', True, tut_color)
+tutorial_text1 = font.render('tap on a POTATO!', True, tut_color)
 tutorial_text2 = font.render('eat the ONE in between!', True, tut_color)
-tutorial_text3 = font.render('remove ALL but ONE!', True, tut_color)
+tutorial_text3 = font.render('eat ALL but ONE!', True, tut_color)
 tutorial_texts = [tutorial_text1, tutorial_text2, tutorial_text3]
 
 # buttons
@@ -178,12 +187,18 @@ glow_image = pygame.image.load(art_folder + 'glow.png').convert()
 glow_image = pygame.transform.scale(glow_image, (POTATO_SIZE, POTATO_SIZE))
 
 for i in range(len(games)):
-    nr_render = font.render(f'{i+1}', True, (0, 0, 0))
+    nr_render = font.render(f'{i+1}', True, board_nr_color)
     rect = nr_render.get_rect(center=(POTATO_SIZE//2, POTATO_SIZE//2))
     base = glow_image.copy()
     base.blit(nr_render, rect)
     board_nr_renders.append(base)
 
+RNG_A = 75
+RNG_C = 74
+RNG_M = (1 << 16) + 1
+
+def rng(seed):
+    return (RNG_A * seed + RNG_C) % RNG_M
 
 def between(pos1, pos2):
     a = int((pos1[0] + pos2[0]) / 2)
@@ -233,7 +248,6 @@ def check_win(board):
         return True
     return False
 
-
 selected = None
 can_jump_to = []
 
@@ -266,7 +280,6 @@ def click(pos):
 
         if tutorial_state < 2:
             tutorial_state = 2
-
 
     elif is_char(i, j, 'x'):
         selected = (i, j)
@@ -330,7 +343,13 @@ def main():
     won = False
     finished = False
     running = True
+
+    random_nr = rng(0)
+    ticks = 0
+
     while running:
+
+        need_reedraw = False
         for event in pygame.event.get():
             if event.type == KEYDOWN:
                 if event.key == K_ESCAPE or event.key == K_AC_BACK:
@@ -338,6 +357,7 @@ def main():
             elif event.type == QUIT:
                 running = False
             elif event.type == MOUSEBUTTONDOWN:
+                need_reedraw = True
                 event.pos = event.pos[0], event.pos[1]-TOP_OFFSET
                 if finished:
                     reset_board(game_nr)
@@ -354,66 +374,76 @@ def main():
                     finished = True
 
 
-        for i, row in enumerate(board):
-            for j, c in enumerate(row):
-                x, y = POTATO_SIZE * i, POTATO_SIZE * j
-                y += TOP_OFFSET
-                if c in "xo":
-                    if (i, j) in can_jump_to:
-                        screen.blit(active_hole_image, (x, y))
-                    else:
-                        screen.blit(hole_image, (x, y))
+        # drawing stuff 
+        if (need_reedraw or (ticks % DRAW_EVERY_NTH_FRAME == 0)):
+            pygame.display.get_surface().fill(background_color)
+            for i, row in enumerate(board):
+                for j, c in enumerate(row):
+                    random_nr = rng(random_nr)
+                    x, y = POTATO_SIZE * i, POTATO_SIZE * j
+                    y += TOP_OFFSET
+                    if c in "xo":
+                        if (i, j) in can_jump_to:
+                            screen.blit(active_hole_image, (x, y))
+                        else:
+                            screen.blit(hole_image, (x, y))
 
-                if c == "x":
-                    if finished and not won:
-                        screen.blit(kartoffel_stoned_image, (x, y))
-                    else:
-                        screen.blit(kartoffel_image, (x, y))
-                elif c == 'r':
-                    screen.blit(btn_restart_image, (x, y))   
-                elif c == 'l':
-                    screen.blit(btn_load_image, (x, y))   
-                elif c == 's':
-                    screen.blit(btn_save_image, (x, y))
-                elif c == 'b':
-                    screen.blit(board_nr_renders[game_nr], (x, y))
+                    if c == "x":
+                        if random_nr >= EYE_OPEN_RATIO * RNG_M:
+                            screen.blit(kartoffel_winky_image, (x, y))
+                        elif finished and not won:
+                            screen.blit(kartoffel_stoned_image, (x, y))
+                        else:
+                            screen.blit(kartoffel_image, (x, y))
 
-        if tutorial_state < 3:
-            tut = tutorial_texts[tutorial_state]
-            mid_x, mid_y = SCREEN_WIDTH//2, TOP_OFFSET//2
-            mid_text_x, mid_text_y = tut.get_width()//2, tut.get_height()//2 
-            screen.blit(tut, (mid_x - mid_text_x, mid_y - POTATO_SIZE//2 - mid_text_y))
+                    elif c == 'r':
+                        screen.blit(btn_restart_image, (x, y))   
+                    elif c == 'l':
+                        screen.blit(btn_load_image, (x, y))   
+                    elif c == 's':
+                        screen.blit(btn_save_image, (x, y))
+                    elif c == 'b':
+                        screen.blit(board_nr_renders[game_nr], (x, y))
 
-
-            t = pygame.time.get_ticks()
-            
-            if tutorial_state_prev != tutorial_state:
-                tut_timer_start = t
-
-            if tutorial_state == 2:
-                if t - tut_timer_start > 3500:
-                    tutorial_state = 3
-                    
-            tutorial_state_prev = tutorial_state
+            if tutorial_state < 3:
+                tut = tutorial_texts[tutorial_state]
+                mid_x, mid_y = SCREEN_WIDTH//2, SCREEN_HEIGHT//2
+                mid_text_x, mid_text_y = tut.get_width()//2, tut.get_height()//2 
+                screen.blit(tut, (mid_x - mid_text_x, mid_y - POTATO_SIZE - mid_text_y))
 
 
-        if finished:
-            mid_x, mid_y = SCREEN_WIDTH//2, SCREEN_HEIGHT//2 + TOP_OFFSET
-            mid_restart_x, mid_restart_y = restart_text_win.get_width()//2, won_text.get_height()//2 
+                t = pygame.time.get_ticks()
                 
-            if won:
-                mid_win_x, mid_win_y = won_text.get_width()//2, won_text.get_height()//2
-                screen.blit(won_text, (mid_x - mid_win_x, mid_y - mid_win_y))
-                screen.blit(restart_text_win, (mid_x - mid_restart_x, mid_y + mid_win_y) )
+                if tutorial_state_prev != tutorial_state:
+                    tut_timer_start = t
 
-            else:
-                mid_lose_x, mid_lose_y = won_text.get_width()//2, won_text.get_height()//2
-                screen.blit(lost_text, (mid_x - mid_lose_x, mid_y - mid_lose_y))
-                screen.blit(restart_text_lose, (mid_x - mid_restart_x, mid_y + mid_lose_y))
+                if tutorial_state == 2:
+                    if t - tut_timer_start > 4000:
+                        tutorial_state = 3 # finished
+                        
+                tutorial_state_prev = tutorial_state
 
-        pygame.display.flip()
-        pygame.display.get_surface().fill((0, 0, 0))
-        pygame.time.wait(10)
+
+            if finished:
+                mid_x, mid_y = SCREEN_WIDTH//2, SCREEN_HEIGHT//2 + TOP_OFFSET
+                mid_restart_x, mid_restart_y = restart_text_win.get_width()//2, won_text.get_height()//2 
+                    
+                if won:
+                    mid_win_x, mid_win_y = won_text.get_width()//2, won_text.get_height()//2
+                    screen.blit(won_text, (mid_x - mid_win_x, mid_y - mid_win_y))
+                    screen.blit(restart_text_win, (mid_x - mid_restart_x, mid_y + mid_win_y//2 + mid_restart_y//4) )
+
+                else:
+                    mid_lose_x, mid_lose_y = won_text.get_width()//2, won_text.get_height()//2
+                    screen.blit(lost_text, (mid_x - mid_lose_x, mid_y - mid_lose_y))
+                    screen.blit(restart_text_lose, (mid_x - mid_restart_x, mid_y + mid_lose_y//2 + mid_restart_y//4))
+
+            pygame.display.flip()
+        else:
+            pass
+
+        ticks += 1
+        pygame.time.wait(30)
 
 
 if __name__ == "__main__":
