@@ -3,9 +3,7 @@ import pygame
 from pygame.locals import *
 import math
 from copy import deepcopy
-
-POTATO_SIZE = 125 # in pixels
-
+import os
 
 game0  = [[".", ".", "o", "o", "o", ".", "."],
           [".", ".", "o", "o", "o", ".", "."],
@@ -70,21 +68,30 @@ games = [game1, game2, game3, game4, game5, game6]
 board = deepcopy(games[0])
 game_nr = 0
 
+pygame.init()
+info = pygame.display.Info()
+WIDTH = min(info.current_w, info.current_h)
+
 W = len(board)
 H = len(board[0])
 
+POTATO_SIZE = WIDTH//W # 125 # in pixels
 SCREEN_WIDTH = POTATO_SIZE*W
 SCREEN_HEIGHT = POTATO_SIZE*H
 
+# offset everything
+TOP_OFFSET = 0
+# we are probably on mobile portrait
+if info.current_w < info.current_h:
+    TOP_OFFSET = info.current_h - info.current_w 
+    TOP_OFFSET = TOP_OFFSET//2
 
-
-
-pygame.init()
-screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), FULLSCREEN)
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT+TOP_OFFSET))
 pygame.display.set_caption('Kartoffelspiel')
 
 
-art_folder = './artwork/'
+
+art_folder = os.path.abspath('.') + '/artwork/'
 
 kartoffel_image = pygame.image.load(art_folder + 'kartoffel.png').convert_alpha()
 kartoffel_image = pygame.transform.scale(kartoffel_image, (POTATO_SIZE, POTATO_SIZE))
@@ -117,7 +124,7 @@ restart_text_win = font.render('<tap anywhere to go next>', True, win_color)
 restart_text_lose = font.render('<tap anywhere to restart>', True, lose_color)
 
 tut_color = (24,2,253)
-font_size = int(POTATO_SIZE/2)
+font_size = int(POTATO_SIZE/4*3)
 font = pygame.font.Font(None, font_size)
 tutorial_text1 = font.render('select a POTATO by tapping!', True, tut_color)
 tutorial_text2 = font.render('eat the ONE in between!', True, tut_color)
@@ -250,6 +257,7 @@ def load(fname='.board_state'):
     except:
         pass
 ### end android stuff
+
     
 def main():
     global tutorial_state, tutorial_state_prev, game_nr
@@ -264,6 +272,7 @@ def main():
             elif event.type == QUIT:
                 running = False
             elif event.type == MOUSEBUTTONDOWN:
+                event.pos = event.pos[0], event.pos[1]-TOP_OFFSET
                 if finished:
                     reset_board(game_nr)
                     finished = False
@@ -279,10 +288,10 @@ def main():
                     finished = True
 
 
-
         for i, row in enumerate(board):
             for j, c in enumerate(row):
                 x, y = POTATO_SIZE * i, POTATO_SIZE * j
+                y += TOP_OFFSET
                 if c in "xo":
                     if (i, j) in can_jump_to:
                         screen.blit(active_hole_image, (x, y))
@@ -297,7 +306,7 @@ def main():
 
         if tutorial_state < 3:
             tut = tutorial_texts[tutorial_state]
-            mid_x, mid_y = SCREEN_WIDTH//2, SCREEN_HEIGHT//2
+            mid_x, mid_y = SCREEN_WIDTH//2, TOP_OFFSET//2
             mid_text_x, mid_text_y = tut.get_width()//2, tut.get_height()//2 
             screen.blit(tut, (mid_x - mid_text_x, mid_y - POTATO_SIZE//2 - mid_text_y))
 
@@ -316,7 +325,7 @@ def main():
 
 
         if finished:
-            mid_x, mid_y = SCREEN_WIDTH//2, SCREEN_HEIGHT//2
+            mid_x, mid_y = SCREEN_WIDTH//2, SCREEN_HEIGHT//2 + TOP_OFFSET//2
             mid_restart_x, mid_restart_y = restart_text_win.get_width()//2, won_text.get_height()//2 
                 
             if won:
@@ -330,6 +339,7 @@ def main():
                 screen.blit(restart_text_lose, (mid_x - mid_restart_x, mid_y + mid_lose_y))
 
         pygame.display.flip()
+        pygame.display.get_surface().fill((0, 0, 0))
         pygame.time.wait(10)
 
 
