@@ -5,68 +5,92 @@ import math
 from copy import deepcopy
 import os
 
-game0  = [[".", ".", "o", "o", "o", ".", "."],
+
+games = []
+# o is empty
+# x is potato
+# . is nothing
+# r is restart_btn
+# s is save_btn
+# l is load_btn
+
+'''
+gamee  = [[".", "r", "o", "o", "o", "l", "s"],
           [".", ".", "o", "o", "o", ".", "."],
           ["o", "o", "o", "o", "o", "o", "o"],
           ["o", "o", "o", "o", "o", "o", "o"],
           ["o", "o", "o", "o", "o", "o", "o"],
           [".", ".", "o", "o", "o", ".", "."],
           [".", ".", "o", "o", "o", ".", "."]]
+'''
+
+games.append([["s", ".", "o", "x", "o", ".", "."],
+              ["l", ".", "o", "x", "o", ".", "."],
+              ["o", "o", "o", "o", "o", "o", "o"],
+              ["o", "o", "o", "o", "o", "o", "o"],
+              ["o", "o", "o", "x", "o", "o", "o"],
+              ["r", ".", "o", "x", "o", ".", "."],
+              [".", ".", "o", "o", "o", ".", "."]])
+
+games.append([["s", ".", "o", "x", "o", ".", "."],
+              ["l", ".", "o", "x", "o", ".", "."],
+              ["o", "o", "o", "o", "o", "o", "o"],
+              ["o", "o", "o", "o", "o", "o", "o"],
+              ["o", "o", "o", "x", "x", "o", "o"],
+              ["r", ".", "o", "x", "o", ".", "."],
+              [".", ".", "o", "o", "o", ".", "."]])
+
+games.append([["s", ".", "o", "x", "o", ".", "."],
+              ["l", ".", "o", "x", "o", ".", "."],
+              ["o", "o", "o", "o", "o", "o", "o"],
+              ["o", "o", "o", "o", "o", "o", "o"],
+              ["o", "o", "o", "x", "x", "o", "o"],
+              ["r", ".", "x", "x", "o", ".", "."],
+              [".", ".", "o", "o", "o", ".", "."]])
+
+games.append([["s", ".", "o", "o", "o", ".", "."],
+              ["l", "o", "o", "x", "o", "o", "."],
+              ["o", "o", "o", "x", "o", "o", "o"],
+              ["o", "x", "x", "x", "x", "x", "o"],
+              ["o", "o", "o", "x", "o", "o", "o"],
+              ["r", "o", "o", "x", "o", "o", "."],
+              [".", ".", "o", "o", "o", ".", "."]])
+
+games.append([["s", ".", "o", "o", "o", ".", "."],
+              ["l", "o", "x", "o", "o", "o", "."],
+              ["o", "o", "x", "x", "o", "o", "o"],
+              ["o", "o", "x", "x", "x", "o", "o"],
+              ["o", "o", "x", "x", "o", "o", "o"],
+              ["r", "o", "x", "o", "o", "o", "."],
+              [".", ".", "o", "o", "o", ".", "."]])
+
+games.append([["s", ".", "o", "o", "x", ".", "."],
+              ["l", ".", "o", "x", "x", ".", "."],
+              ["o", "o", "o", "x", "o", "x", "o"],
+              ["x", "x", "x", "o", "x", "o", "o"],
+              ["o", "o", "o", "x", "o", "o", "o"],
+              ["r", ".", "o", "o", "o", ".", "."],
+              [".", ".", "o", "o", "o", ".", "."]])
+
+games.append([["s", ".", "x", "x", "x", ".", "."],
+              ["l", ".", "x", "x", "x", ".", "."],
+              ["x", "x", "x", "x", "x", "x", "x"],
+              ["x", "x", "x", "o", "x", "x", "x"],
+              ["x", "x", "x", "x", "x", "x", "x"],
+              ["r", ".", "x", "x", "x", ".", "."],
+              [".", ".", "x", "x", "x", ".", "."]])
+
+games.append([["s", ".", "x", "x", "x", ".", "."],
+              ["l", "x", "x", "x", "x", "x", "."],
+              ["x", "x", "x", "o", "x", "x", "x"],
+              ["x", "x", "x", "x", "x", "x", "x"],
+              ["x", "x", "x", "x", "x", "x", "x"],
+              ["r", "x", "x", "x", "x", "x", "."],
+              [".", ".", "x", "x", "x", ".", "."]])
 
 
-game1  = [[".", ".", "o", "x", "o", ".", "."],
-          [".", ".", "o", "x", "o", ".", "."],
-          ["o", "o", "o", "o", "o", "o", "o"],
-          ["o", "o", "o", "o", "o", "o", "o"],
-          ["o", "o", "o", "x", "o", "o", "o"],
-          [".", ".", "o", "x", "o", ".", "."],
-          [".", ".", "o", "o", "o", ".", "."]]
-
-game2  = [[".", ".", "o", "x", "o", ".", "."],
-          [".", ".", "o", "x", "o", ".", "."],
-          ["o", "o", "o", "o", "o", "o", "o"],
-          ["o", "o", "o", "o", "o", "o", "o"],
-          ["o", "o", "o", "x", "x", "o", "o"],
-          [".", ".", "o", "x", "o", ".", "."],
-          [".", ".", "o", "o", "o", ".", "."]]
-
-game3  = [[".", ".", "o", "x", "o", ".", "."],
-          [".", ".", "o", "x", "o", ".", "."],
-          ["o", "o", "o", "o", "o", "o", "o"],
-          ["o", "o", "o", "o", "o", "o", "o"],
-          ["o", "o", "o", "x", "x", "o", "o"],
-          [".", ".", "x", "x", "o", ".", "."],
-          [".", ".", "o", "o", "o", ".", "."]]
-
-
-game4  = [[".", ".", "o", "o", "x", ".", "."],
-          [".", ".", "o", "x", "x", ".", "."],
-          ["o", "o", "o", "x", "o", "x", "o"],
-          ["x", "x", "x", "o", "x", "o", "o"],
-          ["o", "o", "o", "x", "o", "o", "o"],
-          [".", ".", "o", "o", "o", ".", "."],
-          [".", ".", "o", "o", "o", ".", "."]]
-
-game5  = [[".", ".", "x", "x", "x", ".", "."],
-          [".", ".", "x", "x", "x", ".", "."],
-          ["x", "x", "x", "x", "x", "x", "x"],
-          ["x", "x", "x", "o", "x", "x", "x"],
-          ["x", "x", "x", "x", "x", "x", "x"],
-          [".", ".", "x", "x", "x", ".", "."],
-          [".", ".", "x", "x", "x", ".", "."]]
-
-game6  = [[".", ".", "x", "x", "x", ".", "."],
-          [".", "x", "x", "x", "x", "x", "."],
-          ["x", "x", "x", "o", "x", "x", "x"],
-          ["x", "x", "x", "x", "x", "x", "x"],
-          ["x", "x", "x", "x", "x", "x", "x"],
-          [".", "x", "x", "x", "x", "x", "."],
-          [".", ".", "x", "x", "x", ".", "."]]
-
-
-games = [game1, game2, game3, game4, game5, game6]
-board = deepcopy(games[0])
 game_nr = 0
+board = deepcopy(games[game_nr])
 
 pygame.init()
 info = pygame.display.Info()
@@ -88,7 +112,6 @@ if info.current_w < info.current_h:
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT+TOP_OFFSET))
 pygame.display.set_caption('Kartoffelspiel')
-
 
 
 art_folder = os.path.abspath('.') + '/artwork/'
@@ -130,6 +153,15 @@ tutorial_text1 = font.render('select a POTATO by tapping!', True, tut_color)
 tutorial_text2 = font.render('eat the ONE in between!', True, tut_color)
 tutorial_text3 = font.render('there can be only ONE POTATO!', True, tut_color)
 tutorial_texts = [tutorial_text1, tutorial_text2, tutorial_text3]
+
+
+# buttons
+btn_load_image = pygame.image.load(art_folder + 'load_saved_btn.png').convert()
+btn_save_image = pygame.image.load(art_folder + 'save_btn.png').convert()
+btn_restart_image = pygame.image.load(art_folder + 'restart_btn.png').convert()
+btn_load_image = pygame.transform.scale(btn_load_image, (POTATO_SIZE, POTATO_SIZE))
+btn_save_image = pygame.transform.scale(btn_save_image, (POTATO_SIZE, POTATO_SIZE))
+btn_restart_image = pygame.transform.scale(btn_restart_image, (POTATO_SIZE, POTATO_SIZE))
 
 
 def between(pos1, pos2):
@@ -226,6 +258,19 @@ def click(pos):
         if tutorial_state == 0 and len(can_jump_to) > 0:
             tutorial_state = 1
 
+    elif is_char(i, j, 'r'):
+        reset_board(game_nr)
+        selected = False
+        can_jump_to = []
+    
+    elif is_char(i, j, 's'):
+        save()
+
+    elif is_char(i, j, 'l'):
+        load()
+        selected = False
+        can_jump_to = []
+
     else:
         selected = None
         can_jump_to = []
@@ -237,27 +282,24 @@ def reset_board(game_nr):
     global board
     board = deepcopy(games[game_nr])
 
-### android stuff
 def save(fname='.board_state'):
-    try:
-        with open(fname, 'w') as f:
-            for b in board:
-                f.write(','.join(b)+'\n')
-    except:
-        pass
-
+    with open(fname, 'w') as f:
+        f.write(f'{game_nr}\n')
+        for b in board:
+            f.write(','.join(b)+'\n')
+  
 def load(fname='.board_state'):
-    global board
+    global board, game_nr
     new_board = []
     try:
         with open(fname, 'r') as f:
-            for line in f.readlines():
+            lines = f.readlines()
+            game_nr = int(lines[0].strip())
+            for line in lines[1:]:
                 new_board.append(line.strip().split(','))
         board = new_board
     except:
         pass
-### end android stuff
-
     
 def main():
     global tutorial_state, tutorial_state_prev, game_nr
@@ -303,6 +345,12 @@ def main():
                         screen.blit(kartoffel_stoned_image, (x, y))
                     else:
                         screen.blit(kartoffel_image, (x, y))
+                elif c == 'r':
+                    screen.blit(btn_restart_image, (x, y))   
+                elif c == 'l':
+                    screen.blit(btn_load_image, (x, y))   
+                elif c == 's':
+                    screen.blit(btn_save_image, (x, y))   
 
         if tutorial_state < 3:
             tut = tutorial_texts[tutorial_state]
