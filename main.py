@@ -374,7 +374,7 @@ def main():
 
 def draw_level_selection():
     for i in range(len(games)):
-        x, y = i % W * POTATO_SIZE , i // W * POTATO_SIZE
+        x, y = i % W * POTATO_SIZE , i // W * POTATO_SIZE + TOP_OFFSET
         if i <= game_nr_reached:
             screen.blit(board_nr_renders[i], (x, y))
         else:
