@@ -1,3 +1,4 @@
 .buildozer/
 .board_state
 __pycache__/
+bin/

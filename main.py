@@ -1,4 +1,4 @@
-__version__ = "0.3"
+__version__ = "0.4"
 import pygame
 from pygame.locals import *
 import math
