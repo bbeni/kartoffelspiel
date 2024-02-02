@@ -5,10 +5,13 @@ import math
 from copy import deepcopy
 import os
 
+from games import games
+print(f'got {len(games)} games')
+
+
 DRAW_EVERY_NTH_FRAME = 4 # Affects time eye closed
 EYE_OPEN_RATIO = 99/100  # ratio of (time eyes open) / time
 
-# colors in RGB
 tut_color        = (4  , 204, 253)
 win_color        = (0  , 255, 0  )
 lose_color       = (255, 0  , 0  )
@@ -16,118 +19,29 @@ background_color = (45 ,  30, 15 )
 board_nr_color   = (15 ,  0 , 15 )
 
 
-games = []
-# o is empty
-# x is potato
-# . is nothing
-# r is restart_btn
-# s is save_btn
-# l is load_btn
-# b is board number display
-
-'''
-gamee  = [[".", "r", "o", "o", "o", "l", "s"],
-          [".", ".", "o", "o", "o", ".", "."],
-          ["o", "o", "o", "o", "o", "o", "o"],
-          ["o", "o", "o", "o", "o", "o", "o"],
-          ["o", "o", "o", "o", "o", "o", "o"],
-          [".", ".", "o", "o", "o", ".", "."],
-          [".", ".", "o", "o", "o", ".", "."]]
-'''
-
-games.append([["s", ".", "o", "x", "o", ".", "."],
-              ["l", "o", "o", "x", "o", "o", "."],
-              ["o", "o", "o", "o", "o", "o", "o"],
-              ["o", "o", "o", "o", "o", "o", "o"],
-              ["o", "o", "o", "x", "o", "o", "o"],
-              ["r", "o", "o", "x", "o", "o", "."],
-              ["b", ".", "o", "o", "o", ".", "."]])
-
-games.append([["s", ".", "o", "x", "o", ".", "."],
-              ["l", "o", "o", "x", "o", "o", "."],
-              ["o", "o", "o", "o", "o", "o", "o"],
-              ["o", "o", "o", "o", "o", "o", "o"],
-              ["o", "o", "o", "x", "x", "o", "o"],
-              ["r", "o", "o", "x", "o", "o", "."],
-              ["b", ".", "o", "o", "o", ".", "."]])
-
-games.append([["s", ".", "o", "x", "o", ".", "."],
-              ["l", "o", "o", "x", "o", "o", "."],
-              ["o", "o", "o", "o", "o", "o", "o"],
-              ["o", "o", "o", "o", "o", "o", "o"],
-              ["o", "o", "o", "x", "x", "o", "o"],
-              ["r", "o", "x", "x", "o", "o", "."],
-              ["b", ".", "o", "o", "o", ".", "."]])
-
-games.append([["s", ".", "o", "o", "o", ".", "."],
-              ["l", "o", "o", "x", "o", "o", "."],
-              ["o", "o", "o", "x", "o", "o", "o"],
-              ["o", "x", "x", "x", "x", "x", "o"],
-              ["o", "o", "o", "x", "o", "o", "o"],
-              ["r", "o", "o", "x", "o", "o", "."],
-              ["b", ".", "o", "o", "o", ".", "."]])
-
-games.append([["s", ".", "o", "o", "o", ".", "."],
-              ["l", "o", "x", "o", "o", "o", "."],
-              ["o", "o", "x", "x", "o", "o", "o"],
-              ["o", "o", "x", "x", "x", "o", "o"],
-              ["o", "o", "x", "x", "o", "o", "o"],
-              ["r", "o", "x", "o", "o", "o", "."],
-              ["b", ".", "o", "o", "o", ".", "."]])
-
-games.append([["s", ".", "o", "o", "x", ".", "."],
-              ["l", "o", "o", "x", "x", "o", "."],
-              ["o", "o", "o", "x", "o", "x", "o"],
-              ["x", "x", "x", "o", "x", "o", "o"],
-              ["o", "o", "o", "x", "o", "o", "o"],
-              ["r", "o", "o", "o", "o", "o", "."],
-              ["b", ".", "o", "o", "o", ".", "."]])
-
-games.append([["s", ".", "x", "x", "x", ".", "."],
-              ["l", "o", "x", "x", "x", "o", "."],
-              ["x", "x", "x", "x", "x", "x", "x"],
-              ["x", "x", "x", "o", "x", "x", "x"],
-              ["x", "x", "x", "x", "x", "x", "x"],
-              ["r", "o", "x", "x", "x", "o", "."],
-              ["b", ".", "x", "x", "x", ".", "."]])
-
-games.append([["s", ".", "x", "x", "x", ".", "."],
-              ["l", ".", "x", "x", "x", ".", "."],
-              ["x", "x", "x", "x", "x", "x", "x"],
-              ["x", "x", "x", "o", "x", "x", "x"],
-              ["x", "x", "x", "x", "x", "x", "x"],
-              ["r", ".", "x", "x", "x", ".", "."],
-              ["b", ".", "x", "x", "x", ".", "."]])
-
-games.append([["s", ".", "x", "x", "x", ".", "."],
-              ["l", "x", "x", "x", "x", "x", "."],
-              ["x", "x", "x", "o", "x", "x", "x"],
-              ["x", "x", "x", "x", "x", "x", "x"],
-              ["x", "x", "x", "x", "x", "x", "x"],
-              ["r", "x", "x", "x", "x", "x", "."],
-              ["b", ".", "x", "x", "x", ".", "."]])
-
-
-game_nr = 0
+game_nr = 12
 board = deepcopy(games[game_nr])
 
 pygame.init()
 info = pygame.display.Info()
-WIDTH = min(info.current_w, info.current_h)
+SIZE = min(info.current_w, info.current_h)
 
 W = len(board)
 H = len(board[0])
 
-POTATO_SIZE = WIDTH//W # 125 # in pixels
-SCREEN_WIDTH = POTATO_SIZE*W
-SCREEN_HEIGHT = POTATO_SIZE*H
-
-# offset everything
+# offset everything from top in pixel
 TOP_OFFSET = 0
+
 # we are probably on mobile portrait
 if info.current_w < info.current_h:
     TOP_OFFSET = info.current_h - info.current_w 
     TOP_OFFSET = TOP_OFFSET//2
+    POTATO_SIZE = SIZE//W
+else:
+    POTATO_SIZE = SIZE//W*5//7
+
+SCREEN_WIDTH = POTATO_SIZE*W
+SCREEN_HEIGHT = POTATO_SIZE*H
 
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT+TOP_OFFSET))
 pygame.display.set_caption('Kartoffelspiel')
@@ -352,7 +266,7 @@ def main():
         need_reedraw = False
         for event in pygame.event.get():
             if event.type == KEYDOWN:
-                if event.key == K_ESCAPE or event.key == K_AC_BACK:
+                if event.key == K_ESCAPE:
                     running = False
             elif event.type == QUIT:
                 running = False
