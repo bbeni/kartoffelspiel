@@ -1,3 +1,6 @@
 .buildozer/
 .board_state
 __pycache__/
+.game_state
+bin/
+solver/
