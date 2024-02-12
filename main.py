@@ -5,8 +5,9 @@ import math
 from copy import deepcopy
 import os
 
+# load all levels
 from games import games
-print(f'got {len(games)} games')
+print(f'INFO: got {len(games)} games')
 
 art_folder = os.path.abspath('.') + '/artwork/'
 
@@ -20,11 +21,13 @@ background_color = (45 ,  30, 15 )
 board_nr_color   = (15 ,  0 , 15 )
 board_nr_color_greyed = (150,  135 , 150)
 
+# random number generator settings
+RNG_A = 75
+RNG_C = 74
+RNG_M = (1 << 16) + 1
 
-
-game_nr = 0
-game_nr_reached = 0
-board = deepcopy(games[game_nr])
+def rng(seed):
+    return (RNG_A * seed + RNG_C) % RNG_M
 
 
 def setup_screen():
@@ -43,31 +46,6 @@ def setup_screen():
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
     pygame.display.set_caption('Kartoffelspiel')
     return screen, SCREEN_WIDTH, SCREEN_HEIGHT
-
-screen, SCREEN_WIDTH, SCREEN_HEIGHT = setup_screen()
-
-
-def calculate_potato_size(board):
-    nw, nh = len(board[0]), len(board)
-    potato_size = min(SCREEN_WIDTH//nw, SCREEN_HEIGHT//nh)
-    y_offset = max(0, SCREEN_HEIGHT - potato_size*nh)//2
-    return potato_size, y_offset, nw, nh 
-
-potato_size, y_offset, W, H = calculate_potato_size(board)
-
-
-# per level
-widths = []
-heights = []
-y_offsets = []
-potato_sizes = []
-for game in games:
-    size, y_offset, w, h = calculate_potato_size(game)
-    potato_sizes.append(size)
-    widths.append(w)
-    heights.append(h)
-    y_offsets.append(y_offset)
-
 
 def generate_scalable_drawable(size):
     images = {}
@@ -149,6 +127,72 @@ def generate_fixed_size_drawable(size):
     return images, texts
 
 
+def calculate_potato_size(board):
+    nw, nh = len(board[0]), len(board)
+    potato_size = min(SCREEN_WIDTH//nw, SCREEN_HEIGHT//nh)
+    y_offset = max(0, SCREEN_HEIGHT - potato_size*nh)//2
+    return potato_size, y_offset, nw, nh 
+
+
+def reset_board(game_nr):
+    global board
+    board = deepcopy(games[game_nr])
+
+def save_game_state(fname='.game_state'):
+    with open(fname, 'w') as f:
+        f.write(f'game_version:{__version__}\n')
+        f.write(f'{game_nr}\n')
+        f.write(f'{game_nr_reached}\n')            
+        f.write(f'{tutorial_state}\n')
+        for b in board:
+            f.write(','.join(b)+'\n')
+
+def load_game_state(fname='.game_state'):
+    global board, game_nr, game_nr_reached, tutorial_state
+    new_board = []
+
+    try:
+        with open(fname, 'r') as f:
+            lines = f.readlines()
+            __version_line = lines[0].strip()
+            assert __version_line == "game_version:0.5", 'TODO: implement migration'
+            game_nr = int(lines[1].strip())
+            game_nr_reached = int(lines[2].strip())
+            tutorial_state = int(lines[3].strip())
+            for line in lines[4:]:
+                new_board.append(line.strip().split(','))
+
+        board = new_board
+    except FileNotFoundError as e:
+        pass
+
+
+
+# sound 
+pygame.mixer.init()
+hmpf = pygame.mixer.Sound(art_folder + "hmpf.wav")
+win = pygame.mixer.Sound(art_folder + "win.wav")
+lose = pygame.mixer.Sound(art_folder + "lose.wav")
+
+screen, SCREEN_WIDTH, SCREEN_HEIGHT = setup_screen() 
+
+game_nr = 0
+game_nr_reached = 0
+board = deepcopy(games[game_nr])
+
+# per level
+widths = []
+heights = []
+y_offsets = []
+potato_sizes = []
+for game in games:
+    size, y_offset, w, h = calculate_potato_size(game)
+    potato_sizes.append(size)
+    widths.append(w)
+    heights.append(h)
+    y_offsets.append(y_offset)
+
+
 scalable = {}
 for size in set(potato_sizes):
     scalable[size] = generate_scalable_drawable(size)
@@ -161,19 +205,7 @@ NW_MENU = widths[idx_smallest]
 NH_MENU = heights[idx_smallest]
 
 
-# sound 
-pygame.mixer.init()
-hmpf = pygame.mixer.Sound(art_folder + "hmpf.wav")
-win = pygame.mixer.Sound(art_folder + "win.wav")
-lose = pygame.mixer.Sound(art_folder + "lose.wav")
 
-
-RNG_A = 75
-RNG_C = 74
-RNG_M = (1 << 16) + 1
-
-def rng(seed):
-    return (RNG_A * seed + RNG_C) % RNG_M
 
 def between(pos1, pos2):
     a = int((pos1[0] + pos2[0]) / 2)
@@ -261,16 +293,12 @@ def click_while_playing(pos):
 
     elif is_char(i, j, 'x'):
         selected = (i, j)
-        print(selected)
         can_jump_to = [(i - 2, j), (i + 2, j), (i, j - 2), (i, j + 2)]
-        print(can_jump_to)
-        for i, j in can_jump_to:
-            if H > i >= 0 and W > j >= 0:
-                print(i, j)
 
         can_jump_to = [(i, j) for i, j in can_jump_to
                        if H > i >= 0 and W > j >= 0
                        and board[i][j] == "o"]
+
         can_jump_to = [(a, b) for a, b in can_jump_to
                        if character(between((a, b), selected)) == "x"]
                        
@@ -303,38 +331,6 @@ def click_level_selection(pos):
         if last_game_nr != game_nr:
             reset_board(game_nr)
 
-def reset_board(game_nr):
-    global board
-    board = deepcopy(games[game_nr])
-
-def save_game_state(fname='.game_state'):
-    with open(fname, 'w') as f:
-        f.write(f'game_version:{__version__}\n')
-        f.write(f'{game_nr}\n')
-        f.write(f'{game_nr_reached}\n')            
-        f.write(f'{tutorial_state}\n')
-        for b in board:
-            f.write(','.join(b)+'\n')
-
-def load_game_state(fname='.game_state'):
-    global board, game_nr, game_nr_reached, tutorial_state
-    new_board = []
-
-    try:
-        with open(fname, 'r') as f:
-            lines = f.readlines()
-            __version_line = lines[0]
-            assert __version_line != "game_version:0.5", 'TODO: implement migration'
-            game_nr = int(lines[1].strip())
-            game_nr_reached = int(lines[2].strip())
-            tutorial_state = int(lines[3].strip())
-            for line in lines[3:]:
-                new_board.append(line.strip().split(','))
-
-   
-        board = new_board
-    except FileNotFoundError as e:
-        pass
     
 def main():
     global tutorial_state, tutorial_state_prev, game_nr, game_nr_reached,\
@@ -350,7 +346,6 @@ def main():
     potato_size, y_offset, W, H = calculate_potato_size(board)
 
     while running:
-
         need_reedraw = False
         for event in pygame.event.get():
             if event.type == KEYDOWN:
@@ -461,13 +456,15 @@ def draw_board_and_potatoes(random_nr, finished, won):
             elif c == 'r':
                 screen.blit(images['btn_restart'], (x, y))   
             elif c == 'b':
-                screen.blit(images['btn_nr'][game_nr], (x, y))
+                if won and finished:
+                    screen.blit(images['btn_nr'][game_nr-1], (x, y))
+                else:
+                    screen.blit(images['btn_nr'][game_nr], (x, y))
 
     return random_nr
 
 
 def draw_end_text(won):
-    
     mid_x = SCREEN_WIDTH//2
     mid_y = SCREEN_HEIGHT//2
 
