@@ -331,7 +331,9 @@ def click_while_playing(pos):
     return False
 
 def click_level_selection(pos):
-    global game_nr, level_selection
+    global game_nr, level_selection, selected, can_jump_to
+    selected = False
+    can_jump_to = []
     i, j = int(math.floor(pos[0] / smallest_potato)), int(math.floor(pos[1] / smallest_potato))
 
     supposed_game_nr = i + j*NH_MENU
