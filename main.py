@@ -77,6 +77,8 @@ def generate_scalable_drawable(size):
     images['btn_nr'] = board_nr_renders
     btn_restart_image = pygame.image.load(art_folder + 'restart_btn.png').convert()
     images['btn_restart'] = pygame.transform.scale(btn_restart_image, (size, size))
+    btn_back_image = pygame.image.load(art_folder + 'back_btn.png').convert()
+    images['btn_back'] = pygame.transform.scale(btn_back_image, (size, size))
     return images
 
 def generate_fixed_size_drawable(size):
@@ -204,8 +206,8 @@ idx_smallest = potato_sizes.index(smallest_potato)
 NW_MENU = widths[idx_smallest]
 NH_MENU = heights[idx_smallest]
 
-
-
+load_game_state()
+potato_size, y_offset, W, H = calculate_potato_size(board)
 
 def between(pos1, pos2):
     a = int((pos1[0] + pos2[0]) / 2)
@@ -264,8 +266,10 @@ tutorial_state = 0
 
 level_selection = False
 
+
+prev_state = deepcopy(board), game_nr
 def click_while_playing(pos):
-    global can_jump_to, board, selected, tutorial_state, level_selection
+    global can_jump_to, board, selected, tutorial_state, level_selection, prev_state
     x, y = pos
     i, j = int(math.floor(y / potato_size)), int(math.floor(x / potato_size))
 
@@ -275,6 +279,8 @@ def click_while_playing(pos):
         return False
 
     if selected and (i, j) in can_jump_to:
+        prev_state = deepcopy(board), game_nr
+
         i_selected, j_selected = selected
         board[i][j] = "x"
         a = int((i + i_selected) / 2)
@@ -284,12 +290,12 @@ def click_while_playing(pos):
         selected = None
         can_jump_to = []
 
-        if is_finished(board):
-            return True
-        hmpf.play()
-
         if tutorial_state < 2:
             tutorial_state = 2
+
+        if is_finished(board):
+            return True   
+        hmpf.play()
 
     elif is_char(i, j, 'x'):
         selected = (i, j)
@@ -310,8 +316,14 @@ def click_while_playing(pos):
         selected = False
         can_jump_to = []
     
-    elif is_char(i, j, 'b'):
+    elif is_char(i, j, 'l'):
         level_selection = True
+
+    elif is_char(i, j, 'b'):
+        prev_board, prev_game_nr = prev_state
+        if board != prev_board and prev_game_nr == game_nr:
+            board, _ = prev_state
+
     else:
         selected = None
         can_jump_to = []
@@ -342,8 +354,7 @@ def main():
     random_nr = rng(0)
     ticks = 0
 
-    load_game_state()
-    potato_size, y_offset, W, H = calculate_potato_size(board)
+
 
     while running:
         need_reedraw = False
@@ -454,8 +465,12 @@ def draw_board_and_potatoes(random_nr, finished, won):
                     screen.blit(images['potato'], (x, y))
 
             elif c == 'r':
-                screen.blit(images['btn_restart'], (x, y))   
+                screen.blit(images['btn_restart'], (x, y))
+            
             elif c == 'b':
+                screen.blit(images['btn_back'], (x, y))
+
+            elif c == 'l':
                 if won and finished:
                     screen.blit(images['btn_nr'][game_nr-1], (x, y))
                 else:
