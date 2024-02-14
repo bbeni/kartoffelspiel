@@ -163,10 +163,6 @@ def calculate_potato_size(board):
     return potato_size, y_offset, nw, nh 
 
 
-def reset_board(game_nr):
-    global board
-    board = deepcopy(games[game_nr])
-
 def save_game_state(fname='.game_state'):
     with open(fname, 'w') as f:
         f.write(f'game_version:{__gamestate_version__}\n')
@@ -329,18 +325,22 @@ tutorial_state = 0
 selected = None
 can_jump_to = []
 
+# creative playing state
+creative_board_playing = None
+creative_game_nr = None
+
 # global creative state
 creative_n = 0
 creative_selected = None
 creative_can_jump_to = []
 creative_board = deepcopy(empty_board)
-creative_board_playing = None
-creative_game_nr = None
+
 
 creative_levels = []
 if os.path.exists(CREATIVE_LEVELS_PICKLE):
     with open(CREATIVE_LEVELS_PICKLE, 'rb') as f:
         creative_levels = pickle.load(f)
+
 
 class State(Enum):
     PLAYING = auto()
@@ -357,7 +357,7 @@ def is_char(i, j, c, board):
     return False
 
 def click_while_playing(pos, board):
-    global can_jump_to, selected, tutorial_state, prev_state, program_state
+    global can_jump_to, selected, tutorial_state, prev_state, program_state, creative_board_playing
     i, j = int(math.floor(pos[1] / potato_size)), int(math.floor(pos[0] / potato_size))
 
     if selected and (i, j) in can_jump_to:
@@ -376,7 +376,7 @@ def click_while_playing(pos, board):
             tutorial_state = 2
 
         if is_finished(board):
-            return True, board
+            return True, board, creative_board_playing
         hmpf.play()
 
     elif is_char(i, j, 'x', board):
@@ -394,8 +394,10 @@ def click_while_playing(pos, board):
             tutorial_state = 1
 
     elif is_char(i, j, 'r', board):
-        reset_board(game_nr)
-        selected = False
+        board = deepcopy(games[game_nr])
+        if creative_game_nr is not None:
+            creative_board_playing = deepcopy(creative_levels[creative_game_nr])
+        selected = None
         can_jump_to = []
     
     elif is_char(i, j, 'l', board):
@@ -413,11 +415,11 @@ def click_while_playing(pos, board):
         selected = None
         can_jump_to = []
 
-    return False, board
+    return False, board, creative_board_playing
 
 def click_level_selection(pos):
-    global game_nr, program_state, selected, can_jump_to, \
-            creative_game_nr, creative_board_playing, creative_can_jump_to
+    global game_nr, program_state, selected, can_jump_to, board, \
+            creative_game_nr, creative_board_playing, creative_can_jump_to, creative_selected
 
     selected = False
     can_jump_to = []
@@ -427,16 +429,17 @@ def click_level_selection(pos):
     i, j = int(math.floor(pos[0] / smallest_potato)), int(math.floor(pos[1] / smallest_potato))
 
     supposed_game_nr = i + j*NH_MENU
-    if 0 <= supposed_game_nr <= game_nr_reached:
+
+    if supposed_game_nr == 0:
+        program_state = State.CREATIVE_MODE
+
+    elif 0 < supposed_game_nr <= game_nr_reached + 1:
         last_game_nr = game_nr
-        game_nr = supposed_game_nr
+        game_nr = supposed_game_nr - 1
         program_state = State.PLAYING
 
         if last_game_nr != game_nr:
-            reset_board(game_nr)
-    
-    elif len(creative_levels) > 0 and supposed_game_nr == len(games):
-        program_state = State.CREATIVE_MODE
+            board = deepcopy(games[game_nr])
     
     elif len(games) < supposed_game_nr <= len(games) + len(creative_levels):
         last_game_nr = game_nr
@@ -486,6 +489,12 @@ def click_creative_mode(pos):
         program_state = State.LEVEL_SELECTION
 
     elif is_char(i, j, 'r', creative_board) and creative_n > 0:
+        creative_board = deepcopy(empty_board)
+        creative_selected = None
+        creative_can_jump_to = []
+        creative_n = 0
+
+    elif is_char(i, j, 'b', creative_board) and creative_n > 0:
         creative_levels.append(creative_board)
         creative_board = deepcopy(empty_board)
         creative_selected = None
@@ -525,11 +534,13 @@ def main():
                 assert len(State) == 4
                 if program_state == State.PLAYING:
                     if finished:
-                        reset_board(game_nr) 
+
+                        board = deepcopy(games[game_nr])
+
                         potato_size, y_offset, W, H = calculate_potato_size(board)
                         finished = False
                         continue
-                    is_over, board = click_while_playing(event.pos, board)
+                    is_over, board, _= click_while_playing(event.pos, board)
                     if is_over:
                         if check_win(board):
                             win.play()
@@ -537,9 +548,10 @@ def main():
                             game_nr += 1
                             if game_nr > game_nr_reached:
                                 game_nr_reached = game_nr
+                            
                             # ugly way to save the next level state when we finish
                             saved_board = deepcopy(board)
-                            reset_board(game_nr)
+                            board = deepcopy(games[game_nr])
                             save_game_state()
                             board = saved_board
 
@@ -554,7 +566,7 @@ def main():
                         finished = False
                         program_state = State.LEVEL_SELECTION
 
-                    is_over, creative_board_playing = click_while_playing(event.pos, creative_board_playing)
+                    is_over, _, creative_board_playing = click_while_playing(event.pos, creative_board_playing)
                     if is_over:
                         if check_win(creative_board_playing):
                             win.play()
@@ -618,28 +630,29 @@ def main():
         pygame.time.wait(30)
 
     if finished:
-        reset_board(game_nr)
+        board = deepcopy(games[game_nr])
     save_game_state()
 
 
 def draw_level_selection():
     images = scalable[potato_size]
+
+
+
+    screen.blit(images['btn_creative'], (0, y_offset))
+
     for i in range(len(games)):
-        x, y = i % NW_MENU * smallest_potato , i // NW_MENU * smallest_potato + y_offset
+        x, y = (i+1) % NW_MENU * smallest_potato , (i+1) // NW_MENU * smallest_potato + y_offset
         if i <= game_nr_reached:
             screen.blit(fixed_images['btn_nr'][i], (x, y))
         else:
             screen.blit(fixed_images['btn_nr_grey'][i], (x, y))
 
-    if len(creative_levels) > 0:
-        x, y = len(games) % NW_MENU * smallest_potato , len(games) // NW_MENU * smallest_potato + y_offset
-        screen.blit(images['btn_creative'], (x, y))
-
-
     for j in range(len(creative_levels)):
         real_index = j + len(games) + 1
         x, y = real_index % NW_MENU * smallest_potato , real_index // NW_MENU * smallest_potato + y_offset
         screen.blit(fixed_images['btn_nr_creative'][j], (x, y))
+
 
 
 
@@ -713,12 +726,12 @@ def draw_creative_mode(random_nr):
                 n = len(creative_levels)
                 screen.blit(fixed_images['btn_nr_creative'][n], (x, y))
 
-            elif c == 'b':
+            elif c == 'r':
                 # TODO: implement creative mode back button
                 #screen.blit(images['btn_back'], (x, y))
-                pass
+                screen.blit(images['btn_restart'], (x, y))
 
-            elif c == 'r':
+            elif c == 'b':
                 screen.blit(images['btn_save'], (x, y))
 
     screen.blit(texts['creative'][0], (0, 0))
