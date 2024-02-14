@@ -17,6 +17,8 @@ print(f'INFO: got {len(games)} games')
 
 art_folder = os.path.abspath('.') + '/artwork/'
 
+CREATIVE_LEVELS_PICKLE = 'creative_levels.pkl'
+
 DRAW_EVERY_NTH_FRAME = 5 # Affects time eye closed
 EYE_OPEN_RATIO = 99/100  # ratio of (time eyes open) / time
 
@@ -304,11 +306,13 @@ creative_n = 0
 creative_selected = None
 creative_can_jump_to = []
 creative_board = deepcopy(empty_board)
-
-creative_game_nr = None
-creative_levels = []
 creative_board_playing = None
+creative_game_nr = None
 
+creative_levels = []
+if os.path.exists(CREATIVE_LEVELS_PICKLE):
+    with open(CREATIVE_LEVELS_PICKLE, 'rb') as f:
+        creative_levels = pickle.load(f)
 
 class State(Enum):
     PLAYING = auto()
@@ -459,6 +463,10 @@ def click_creative_mode(pos):
         creative_selected = None
         creative_can_jump_to = []
         creative_n = 0
+
+        with open(CREATIVE_LEVELS_PICKLE, 'wb') as f:
+            pickle.dump(creative_levels, f)
+
         program_state = State.LEVEL_SELECTION
 
     
