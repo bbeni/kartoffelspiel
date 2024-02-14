@@ -682,7 +682,7 @@ def draw_creative_mode(random_nr):
                 screen.blit(images['btn_creative'], (x, y))
 
             elif c == 'l':
-                n = creative_game_nr + 1 if creative_game_nr else 0 
+                n = len(creative_levels)
                 screen.blit(fixed_images['btn_nr_creative'][n], (x, y))
 
             elif c == 'b':
