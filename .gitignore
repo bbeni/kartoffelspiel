@@ -4,3 +4,4 @@ __pycache__/
 .game_state
 bin/
 solver/
+*.pkl
