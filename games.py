@@ -7,6 +7,13 @@
 '''
 games = []
 
+empty_board =[["c", "l", "o", "o", "o", "b", "r"],
+              [".", "o", "o", "o", "o", "o", "."],
+              ["o", "o", "o", "o", "o", "o", "o"],
+              ["o", "o", "o", "o", "o", "o", "o"],
+              ["o", "o", "o", "o", "o", "o", "o"],
+              [".", "o", "o", "o", "o", "o", "."],
+              [".", ".", "o", "o", "o", ".", "."],]
 
 # 2
 games.append([[".", ".", ".", "o", ".", ".", "."],
@@ -172,6 +179,7 @@ games.append([[".", ".", "x", "x", "x", ".", "."],
 
 
 for i in range(len(games)):
-    games[i][0][0] =  "l"
-    games[i][0][-1] = "r"
-    games[i][0][-2] = "b"
+    games[i][0][1] =  "l"  # add level button
+    games[i][0][0] =  "c"  # add creative mode button
+    games[i][0][-1] = "r"  # add restart button
+    games[i][0][-2] = "b"  # add one step back

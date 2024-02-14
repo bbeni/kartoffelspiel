@@ -1,15 +1,24 @@
-__version__ = "0.5"
+__version__ = "0.6"
+__gamestate_version__ = "0.6"
 import pygame
 from pygame.locals import *
 import math
 from copy import deepcopy
 import os
+from enum import Enum, auto
+import pickle
 
+
+# for creative mode
+from games import empty_board
 # load all levels
 from games import games
 print(f'INFO: got {len(games)} games')
 
+
 art_folder = os.path.abspath('.') + '/artwork/'
+
+CREATIVE_LEVELS_PICKLE = 'creative_levels.pkl'
 
 DRAW_EVERY_NTH_FRAME = 5 # Affects time eye closed
 EYE_OPEN_RATIO = 99/100  # ratio of (time eyes open) / time
@@ -74,11 +83,16 @@ def generate_scalable_drawable(size):
         base.blit(nr_render, rect)
         board_nr_renders.append(base)
 
+
     images['btn_nr'] = board_nr_renders
     btn_restart_image = pygame.image.load(art_folder + 'restart_btn.png').convert()
     images['btn_restart'] = pygame.transform.scale(btn_restart_image, (size, size))
     btn_back_image = pygame.image.load(art_folder + 'back_btn.png').convert()
     images['btn_back'] = pygame.transform.scale(btn_back_image, (size, size))
+    btn_creative_image = pygame.image.load(art_folder + 'creative_btn.png').convert()
+    images['btn_creative'] = pygame.transform.scale(btn_creative_image, (size, size))
+    btn_save_image = pygame.image.load(art_folder + 'save_btn.png').convert()
+    images['btn_save'] = pygame.transform.scale(btn_save_image, (size, size))
     return images
 
 def generate_fixed_size_drawable(size):
@@ -96,12 +110,15 @@ def generate_fixed_size_drawable(size):
     font_size = int(size/5*4)
     font = pygame.font.Font(None, font_size)
     tutorial_text1 = font.render('tap on a POTATO!', True, tut_color)
-    tutorial_text2 = font.render('eat the ONE in between!', True, tut_color)
-    tutorial_text3 = font.render('eat ALL but ONE!', True, tut_color)
+    tutorial_text2 = font.render('jump over!', True, tut_color)
+    tutorial_text3 = font.render('be the last!', True, tut_color)
     texts['tut'] = [tutorial_text1, tutorial_text2, tutorial_text3]
 
-    images = {}
+    creative_text1 = font.render('Creative Mode', True, tut_color)
+    creative_text2 = font.render('play in reverse', True, tut_color)
+    texts['creative'] = [creative_text1, creative_text2]
 
+    images = {}
     # board number display
     font = pygame.font.Font(None, size)
     glow_image = pygame.image.load(art_folder + 'glow.png').convert()
@@ -114,8 +131,18 @@ def generate_fixed_size_drawable(size):
         base = glow_image.copy()
         base.blit(nr_render, rect)
         board_nr_renders.append(base)
-
     images['btn_nr'] = board_nr_renders
+
+    board_nr_renders = []
+    abc = 'abcdefghijklmnopqrstuvw'
+    for i in range(len(abc)):
+        nr_render = font.render(f'{abc[i]}', True, board_nr_color)
+        rect = nr_render.get_rect(center=(size//2, size//2))
+        base = glow_image.copy()
+        base.blit(nr_render, rect)
+        board_nr_renders.append(base)
+    images['btn_nr_creative'] = board_nr_renders
+
 
     board_nr_renders_greyed = []
     for i in range(len(games)):
@@ -142,12 +169,35 @@ def reset_board(game_nr):
 
 def save_game_state(fname='.game_state'):
     with open(fname, 'w') as f:
-        f.write(f'game_version:{__version__}\n')
+        f.write(f'game_version:{__gamestate_version__}\n')
         f.write(f'{game_nr}\n')
         f.write(f'{game_nr_reached}\n')            
         f.write(f'{tutorial_state}\n')
         for b in board:
             f.write(','.join(b)+'\n')
+
+
+valid_versions = ['0.5', '0.6']
+assert __gamestate_version__ in valid_versions
+
+def migrate_from_version(version, fname):
+    if not version in valid_versions:
+        assert False, f'TODO: implement migration for version {version}'
+    if version == '0.5' and __gamestate_version__ == '0.6':
+        with open(fname, 'r') as f:
+            lines = f.readlines()
+        lines[0] = 'game_version:0.6\n'
+        t = lines[4].split(',')
+        t[0], t[1] = 'c', 'l'
+        lines[4] = ','.join(t)
+        with open(fname, 'w') as f:
+            for l in lines:
+                f.write(l)
+
+        return lines
+    else:
+        assert False, f"game state migration not implemented {version} -> {__gamestate_version__}"
+
 
 def load_game_state(fname='.game_state'):
     global board, game_nr, game_nr_reached, tutorial_state
@@ -156,65 +206,29 @@ def load_game_state(fname='.game_state'):
     try:
         with open(fname, 'r') as f:
             lines = f.readlines()
-            __version_line = lines[0].strip()
-            assert __version_line == "game_version:0.5", 'TODO: implement migration'
-            game_nr = int(lines[1].strip())
-            game_nr_reached = int(lines[2].strip())
-            tutorial_state = int(lines[3].strip())
-            for line in lines[4:]:
-                new_board.append(line.strip().split(','))
+    
+        game_state_version = lines[0].strip().split(":")[-1]
+        if game_state_version != __gamestate_version__:
+            lines = migrate_from_version(game_state_version, fname)
+
+        game_nr = int(lines[1].strip())
+        game_nr_reached = int(lines[2].strip())
+        tutorial_state = int(lines[3].strip())
+        for line in lines[4:]:
+            new_board.append(line.strip().split(','))
 
         board = new_board
+        
     except FileNotFoundError as e:
         pass
 
-
-
-# sound 
-pygame.mixer.init()
-hmpf = pygame.mixer.Sound(art_folder + "hmpf.wav")
-win = pygame.mixer.Sound(art_folder + "win.wav")
-lose = pygame.mixer.Sound(art_folder + "lose.wav")
-
-screen, SCREEN_WIDTH, SCREEN_HEIGHT = setup_screen() 
-
-game_nr = 0
-game_nr_reached = 0
-board = deepcopy(games[game_nr])
-
-# per level
-widths = []
-heights = []
-y_offsets = []
-potato_sizes = []
-for game in games:
-    size, y_offset, w, h = calculate_potato_size(game)
-    potato_sizes.append(size)
-    widths.append(w)
-    heights.append(h)
-    y_offsets.append(y_offset)
-
-
-scalable = {}
-for size in set(potato_sizes):
-    scalable[size] = generate_scalable_drawable(size)
-
-smallest_potato = min(potato_sizes)
-fixed_images, texts = generate_fixed_size_drawable(smallest_potato)
-
-idx_smallest = potato_sizes.index(smallest_potato)
-NW_MENU = widths[idx_smallest]
-NH_MENU = heights[idx_smallest]
-
-load_game_state()
-potato_size, y_offset, W, H = calculate_potato_size(board)
 
 def between(pos1, pos2):
     a = int((pos1[0] + pos2[0]) / 2)
     b = int((pos1[1] + pos2[1]) / 2)
     return a, b
 
-def character(pos):
+def character(pos, board):
     a, b = pos
     return board[a][b]
 
@@ -258,33 +272,101 @@ def check_win(board):
     return False
 
 
+
+
+screen, SCREEN_WIDTH, SCREEN_HEIGHT = setup_screen() 
+
+
+# per level
+widths = []
+heights = []
+y_offsets = []
+potato_sizes = []
+for game in games:
+    size, y_offset, w, h = calculate_potato_size(game)
+    potato_sizes.append(size)
+    widths.append(w)
+    heights.append(h)
+    y_offsets.append(y_offset)
+
+smallest_potato = min(potato_sizes)
+
+# sound 
+pygame.mixer.init()
+hmpf = pygame.mixer.Sound(art_folder + "hmpf.wav")
+win = pygame.mixer.Sound(art_folder + "win.wav")
+lose = pygame.mixer.Sound(art_folder + "lose.wav")
+
+# graphics
+scalable = {}
+for size in set(potato_sizes):
+    scalable[size] = generate_scalable_drawable(size)
+
+fixed_images, texts = generate_fixed_size_drawable(smallest_potato)
+
+
+idx_smallest = potato_sizes.index(smallest_potato)
+NW_MENU = widths[idx_smallest]
+NH_MENU = heights[idx_smallest]
+
+
+
+
+# globals game state 
+game_nr = 0
+game_nr_reached = 0
+board = deepcopy(games[game_nr])
+prev_state = deepcopy(board), game_nr
+
+
+load_game_state()
+
+
+# global ui state
+potato_size, y_offset, W, H = calculate_potato_size(board)
+tutorial_state_prev = -1
+tutorial_state = 0
 selected = None
 can_jump_to = []
 
-tutorial_state_prev = -1
-tutorial_state = 0
+# global creative state
+creative_n = 0
+creative_selected = None
+creative_can_jump_to = []
+creative_board = deepcopy(empty_board)
+creative_board_playing = None
+creative_game_nr = None
 
-level_selection = False
+creative_levels = []
+if os.path.exists(CREATIVE_LEVELS_PICKLE):
+    with open(CREATIVE_LEVELS_PICKLE, 'rb') as f:
+        creative_levels = pickle.load(f)
+
+class State(Enum):
+    PLAYING = auto()
+    LEVEL_SELECTION = auto()
+    CREATIVE_MODE = auto()
+    PLAYING_CREATIVE = auto()
+
+program_state = State.PLAYING
 
 
-prev_state = deepcopy(board), game_nr
-def click_while_playing(pos):
-    global can_jump_to, board, selected, tutorial_state, level_selection, prev_state
-    x, y = pos
-    i, j = int(math.floor(y / potato_size)), int(math.floor(x / potato_size))
+def is_char(i, j, c, board):
+    if 0 <= i < len(board) and 0 <= j < len(board[0]):
+        return board[i][j] == c
+    return False
 
-    def is_char(i, j, c):
-        if 0 <= i < len(board) and 0 <= j < len(board[0]):
-            return board[i][j] == c
-        return False
+def click_while_playing(pos, board):
+    global can_jump_to, selected, tutorial_state, prev_state, program_state
+    i, j = int(math.floor(pos[1] / potato_size)), int(math.floor(pos[0] / potato_size))
 
     if selected and (i, j) in can_jump_to:
         prev_state = deepcopy(board), game_nr
 
         i_selected, j_selected = selected
         board[i][j] = "x"
-        a = int((i + i_selected) / 2)
-        b = int((j + j_selected) / 2)
+        a = int((i + i_selected)/2)
+        b = int((j + j_selected)/2)
         board[a][b] = "o"
         board[i_selected][j_selected] = "o"
         selected = None
@@ -294,10 +376,10 @@ def click_while_playing(pos):
             tutorial_state = 2
 
         if is_finished(board):
-            return True   
+            return True, board
         hmpf.play()
 
-    elif is_char(i, j, 'x'):
+    elif is_char(i, j, 'x', board):
         selected = (i, j)
         can_jump_to = [(i - 2, j), (i + 2, j), (i, j - 2), (i, j + 2)]
 
@@ -306,20 +388,23 @@ def click_while_playing(pos):
                        and board[i][j] == "o"]
 
         can_jump_to = [(a, b) for a, b in can_jump_to
-                       if character(between((a, b), selected)) == "x"]
+                       if character(between((a, b), selected), board) == "x"]
                        
         if tutorial_state == 0 and len(can_jump_to) > 0:
             tutorial_state = 1
 
-    elif is_char(i, j, 'r'):
+    elif is_char(i, j, 'r', board):
         reset_board(game_nr)
         selected = False
         can_jump_to = []
     
-    elif is_char(i, j, 'l'):
-        level_selection = True
+    elif is_char(i, j, 'l', board):
+        program_state = State.LEVEL_SELECTION
 
-    elif is_char(i, j, 'b'):
+    elif is_char(i, j, 'c', board):
+        program_state = State.CREATIVE_MODE
+
+    elif is_char(i, j, 'b', board):
         prev_board, prev_game_nr = prev_state
         if board != prev_board and prev_game_nr == game_nr:
             board, _ = prev_state
@@ -328,34 +413,100 @@ def click_while_playing(pos):
         selected = None
         can_jump_to = []
 
-    return False
+    return False, board
 
 def click_level_selection(pos):
-    global game_nr, level_selection, selected, can_jump_to
+    global game_nr, program_state, selected, can_jump_to, \
+            creative_game_nr, creative_board_playing, creative_can_jump_to
+
     selected = False
     can_jump_to = []
+    creative_selected = False
+    creative_can_jump_to = []
+
     i, j = int(math.floor(pos[0] / smallest_potato)), int(math.floor(pos[1] / smallest_potato))
 
     supposed_game_nr = i + j*NH_MENU
     if 0 <= supposed_game_nr <= game_nr_reached:
         last_game_nr = game_nr
         game_nr = supposed_game_nr
-        level_selection = False
+        program_state = State.PLAYING
 
         if last_game_nr != game_nr:
             reset_board(game_nr)
+    
+    elif len(creative_levels) > 0 and supposed_game_nr == len(games):
+        program_state = State.CREATIVE_MODE
+    
+    elif len(games) < supposed_game_nr <= len(games) + len(creative_levels):
+        last_game_nr = game_nr
+        creative_game_nr = supposed_game_nr - len(games) - 1
+        creative_board_playing = deepcopy(creative_levels[creative_game_nr])
+        program_state = State.PLAYING_CREATIVE
+
+
+def click_creative_mode(pos):
+    global creative_selected, creative_can_jump_to, creative_n, creative_board, program_state
+    i, j = int(math.floor(pos[1] / smallest_potato)), int(math.floor(pos[0] / smallest_potato))
+
+    if creative_n == 0:
+        if is_char(i, j, 'o', creative_board):
+            creative_board[i][j] = 'x'
+            creative_selected = (i, j)
+            creative_n += 1
+
+    else:
+        if is_char(i, j, 'x', creative_board):
+            creative_selected = (i, j)
+
+        elif creative_selected and (i, j) in creative_can_jump_to:
+            i_selected, j_selected = creative_selected
+            creative_board[i][j] = "x"
+            a = int((i + i_selected)/2)
+            b = int((j + j_selected)/2)
+            creative_board[a][b] = "x"
+            creative_board[i_selected][j_selected] = "o"
+            creative_selected = (i, j)
+            creative_can_jump_to = []
+            hmpf.play()
+            creative_n += 1
+        else:
+            creative_selected = None
+            creative_can_jump_to = []
+
+    if creative_selected:
+        creative_can_jump_to = [(i - 2, j), (i + 2, j), (i, j - 2), (i, j + 2)]
+        creative_can_jump_to = [(i, j) for i, j in creative_can_jump_to
+                   if H > i >= 0 and W > j >= 0
+                   and creative_board[i][j] == "o"]
+        creative_can_jump_to = [(a, b) for a, b in creative_can_jump_to
+                   if character(between((a, b), creative_selected), creative_board) == "o"]
+
+    if is_char(i, j, 'c', creative_board) or is_char(i, j, 'l', creative_board):
+        program_state = State.LEVEL_SELECTION
+
+    elif is_char(i, j, 'r', creative_board) and creative_n > 0:
+        creative_levels.append(creative_board)
+        creative_board = deepcopy(empty_board)
+        creative_selected = None
+        creative_can_jump_to = []
+        creative_n = 0
+
+        with open(CREATIVE_LEVELS_PICKLE, 'wb') as f:
+            pickle.dump(creative_levels, f)
+
+        program_state = State.LEVEL_SELECTION
 
     
 def main():
     global tutorial_state, tutorial_state_prev, game_nr, game_nr_reached,\
-     level_selection, board, potato_size, H, W, y_offset
+      board, potato_size, H, W, y_offset, program_state,  creative_board_playing
     won = False
     finished = False
     running = True
 
     random_nr = rng(0)
     ticks = 0
-
 
 
     while running:
@@ -371,12 +522,14 @@ def main():
                 event.pos = event.pos[0], event.pos[1]-y_offset
                 need_reedraw = True
 
-                if not level_selection:
+                assert len(State) == 4
+                if program_state == State.PLAYING:
                     if finished:
                         reset_board(game_nr) 
                         potato_size, y_offset, W, H = calculate_potato_size(board)
                         finished = False
-                    is_over = click_while_playing(event.pos)
+                        continue
+                    is_over, board = click_while_playing(event.pos, board)
                     if is_over:
                         if check_win(board):
                             win.play()
@@ -394,23 +547,45 @@ def main():
                             lose.play()
                             won = False
                         finished = True
-                else:
+
+                elif program_state == State.PLAYING_CREATIVE:
+
+                    if finished:
+                        finished = False
+                        program_state = State.LEVEL_SELECTION
+
+                    is_over, creative_board_playing = click_while_playing(event.pos, creative_board_playing)
+                    if is_over:
+                        if check_win(creative_board_playing):
+                            win.play()
+                            won = True
+                            game_nr = 0
+                        else:
+                            lose.play()
+                            won = False
+                        finished = True
+
+                elif program_state == State.LEVEL_SELECTION:
                     click_level_selection(event.pos)
                     potato_size, y_offset, W, H = calculate_potato_size(board)
+
+                elif program_state == State.CREATIVE_MODE:
+                    click_creative_mode(event.pos)
+                else:
+                    assert False, 'unreachable'
 
         # drawing stuff 
         if (need_reedraw or (ticks % DRAW_EVERY_NTH_FRAME == 0)):
 
             pygame.display.get_surface().fill(background_color)
 
-            if not level_selection:
-                random_nr = draw_board_and_potatoes(random_nr, finished, won)
+            assert len(State) == 4
+            if program_state == State.PLAYING:
+                random_nr = draw_board_and_potatoes(random_nr, finished, won, board)
 
                 if tutorial_state < 3:
                     tut = texts['tut'][tutorial_state]
-                    mid_x, mid_y = SCREEN_WIDTH//2, SCREEN_HEIGHT//2
-                    mid_text_x, mid_text_y = tut.get_width()//2, tut.get_height()//2 
-                    screen.blit(tut, (mid_x - mid_text_x, mid_y - potato_size - mid_text_y))
+                    screen.blit(tut, (0, 0))
 
                     t = pygame.time.get_ticks()
                     if tutorial_state_prev != tutorial_state:
@@ -423,8 +598,19 @@ def main():
 
                 if finished:
                     draw_end_text(won)
-            else:
+            elif program_state == State.PLAYING_CREATIVE:
+                random_nr = draw_board_and_potatoes(random_nr, finished, won, creative_board_playing)
+                if finished:
+                    draw_end_text(won)
+
+            elif program_state == State.LEVEL_SELECTION:
                 draw_level_selection()
+
+            elif program_state == State.CREATIVE_MODE:
+                draw_creative_mode(random_nr)
+
+            else:
+                assert False, 'unreachable' 
 
             pygame.display.flip()
 
@@ -437,6 +623,7 @@ def main():
 
 
 def draw_level_selection():
+    images = scalable[potato_size]
     for i in range(len(games)):
         x, y = i % NW_MENU * smallest_potato , i // NW_MENU * smallest_potato + y_offset
         if i <= game_nr_reached:
@@ -444,8 +631,19 @@ def draw_level_selection():
         else:
             screen.blit(fixed_images['btn_nr_grey'][i], (x, y))
 
+    if len(creative_levels) > 0:
+        x, y = len(games) % NW_MENU * smallest_potato , len(games) // NW_MENU * smallest_potato + y_offset
+        screen.blit(images['btn_creative'], (x, y))
 
-def draw_board_and_potatoes(random_nr, finished, won):
+
+    for j in range(len(creative_levels)):
+        real_index = j + len(games) + 1
+        x, y = real_index % NW_MENU * smallest_potato , real_index // NW_MENU * smallest_potato + y_offset
+        screen.blit(fixed_images['btn_nr_creative'][j], (x, y))
+
+
+
+def draw_board_and_potatoes(random_nr, finished, won, board):
     images = scalable[potato_size]
     for j, row in enumerate(board):
         for i, c in enumerate(row):
@@ -472,12 +670,59 @@ def draw_board_and_potatoes(random_nr, finished, won):
             elif c == 'b':
                 screen.blit(images['btn_back'], (x, y))
 
-            elif c == 'l':
-                if won and finished:
-                    screen.blit(images['btn_nr'][game_nr-1], (x, y))
-                else:
-                    screen.blit(images['btn_nr'][game_nr], (x, y))
+            elif c == 'c':
+                screen.blit(images['btn_creative'], (x, y))
 
+            elif c == 'l':
+                if program_state == State.PLAYING:
+                    if won and finished:
+                        screen.blit(images['btn_nr'][game_nr-1], (x, y))
+                    else:
+                        screen.blit(images['btn_nr'][game_nr], (x, y))
+
+                elif program_state == State.PLAYING_CREATIVE:
+                    screen.blit(fixed_images['btn_nr_creative'][creative_game_nr], (x, y))
+
+
+    return random_nr
+
+
+def draw_creative_mode(random_nr):
+    images = scalable[potato_size]
+    for j, row in enumerate(creative_board):
+        for i, c in enumerate(row):
+            random_nr = rng(random_nr)
+            x, y = potato_size * i, potato_size * j
+            y += y_offset
+            if c in "xo":
+                if (j, i) in creative_can_jump_to:
+                    screen.blit(images['active_hole'], (x, y))
+                else:
+                    screen.blit(images['hole'], (x, y))
+
+            if c == "x":
+                if random_nr >= EYE_OPEN_RATIO * RNG_M:
+                    screen.blit(images['winky_potato'], (x, y))
+                else:
+                    screen.blit(images['potato'], (x, y))
+
+            elif c == 'c':
+                screen.blit(images['btn_creative'], (x, y))
+
+            elif c == 'l':
+                n = len(creative_levels)
+                screen.blit(fixed_images['btn_nr_creative'][n], (x, y))
+
+            elif c == 'b':
+                # TODO: implement creative mode back button
+                #screen.blit(images['btn_back'], (x, y))
+                pass
+
+            elif c == 'r':
+                screen.blit(images['btn_save'], (x, y))
+
+    screen.blit(texts['creative'][0], (0, 0))
+    screen.blit(texts['creative'][1], (0, texts['creative'][0].get_height()))
     return random_nr
 
 
