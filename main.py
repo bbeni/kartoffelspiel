@@ -1,4 +1,5 @@
-__version__ = "0.5"
+__version__ = "0.6"
+__gamestate_version__ = "0.6"
 import pygame
 from pygame.locals import *
 import math
@@ -168,12 +169,35 @@ def reset_board(game_nr):
 
 def save_game_state(fname='.game_state'):
     with open(fname, 'w') as f:
-        f.write(f'game_version:{__version__}\n')
+        f.write(f'game_version:{__gamestate_version__}\n')
         f.write(f'{game_nr}\n')
         f.write(f'{game_nr_reached}\n')            
         f.write(f'{tutorial_state}\n')
         for b in board:
             f.write(','.join(b)+'\n')
+
+
+valid_versions = ['0.5', '0.6']
+assert __gamestate_version__ in valid_versions
+
+def migrate_from_version(version, fname):
+    if not version in valid_versions:
+        assert False, f'TODO: implement migration for version {version}'
+    if version == '0.5' and __gamestate_version__ == '0.6':
+        with open(fname, 'r') as f:
+            lines = f.readlines()
+        lines[0] = 'game_version:0.6\n'
+        t = lines[4].split(',')
+        t[0], t[1] = 'c', 'l'
+        lines[4] = ','.join(t)
+        with open(fname, 'w') as f:
+            for l in lines:
+                f.write(l)
+
+        return lines
+    else:
+        assert False, f"game state migration not implemented {version} -> {__gamestate_version__}"
+
 
 def load_game_state(fname='.game_state'):
     global board, game_nr, game_nr_reached, tutorial_state
@@ -182,15 +206,19 @@ def load_game_state(fname='.game_state'):
     try:
         with open(fname, 'r') as f:
             lines = f.readlines()
-            __version_line = lines[0].strip()
-            assert __version_line == "game_version:0.5", 'TODO: implement migration'
-            game_nr = int(lines[1].strip())
-            game_nr_reached = int(lines[2].strip())
-            tutorial_state = int(lines[3].strip())
-            for line in lines[4:]:
-                new_board.append(line.strip().split(','))
+    
+        game_state_version = lines[0].strip().split(":")[-1]
+        if game_state_version != __gamestate_version__:
+            lines = migrate_from_version(game_state_version, fname)
+
+        game_nr = int(lines[1].strip())
+        game_nr_reached = int(lines[2].strip())
+        tutorial_state = int(lines[3].strip())
+        for line in lines[4:]:
+            new_board.append(line.strip().split(','))
 
         board = new_board
+        
     except FileNotFoundError as e:
         pass
 
@@ -695,8 +723,6 @@ def draw_creative_mode(random_nr):
 
     screen.blit(texts['creative'][0], (0, 0))
     screen.blit(texts['creative'][1], (0, texts['creative'][0].get_height()))
-
-
     return random_nr
 
 
