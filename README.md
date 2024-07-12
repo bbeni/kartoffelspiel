@@ -1,12 +1,14 @@
 # Kartoffelspiel
-Be a potato and eat your friends. Peg-Solitaire game in pygame. 🥔
+Be a potato and eat your friends. [Peg-Solitaire game](https://en.wikipedia.org/wiki/Peg_solitaire) using [pygame](https://www.pygame.org/). 🥔
+
+![screenshot of the kartoffelspiel](documentation/screenshot.png)
 
 ## Quick setup
 Tested with python 3.7
 
 ```bash
-pip3 install pygame
-python3 ./main.py
+pip install pygame
+python ./main.py
 ```
 
 ## Building APK for android
